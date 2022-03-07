@@ -1,4 +1,4 @@
-# Python-and-R
+# Data Science Code in Python and R
 For the Python + R Newsletter on LinkedIn
 
 The code associated with the little Python + R Newsletter on LinkedIn.
