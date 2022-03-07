@@ -1,0 +1,135 @@
+---
+title: "Dataquest Workflow"
+author: "Matt Rosinski"
+date: "01/09/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. 
+
+``` {r}
+
+library(readr)
+library(tidyverse)
+
+book_reviews <- read_csv("book_reviews.csv")
+
+glimpse(book_reviews)
+
+typeof(book_reviews$book)
+
+typeof(book_reviews$price)
+
+dim(book_sales)
+
+column_name <- colnames(book_reviews)
+
+indices <- 1:length(book_reviews)
+
+length(book_reviews)
+
+data_type <- integer(length(book_reviews))
+
+for (each in indices) {
+  data_type[each] <- typeof(book_reviews[[each]])
+}
+
+data_type
+
+
+for (each in column_name) {
+  print(typeof(book_reviews[[each]]))
+}
+
+for (each in column_name) {
+  print("Unique values in column:")
+  print(each)
+  print(unique(book_reviews[[each]]))
+  print("")
+}
+
+```
+
+```{r}
+
+
+# for (each in column_name) {
+#   print(each)
+#   print(is.na(book_reviews[[each]]))
+# }
+
+
+filter_book_reviews <- book_reviews %>%
+  filter(!(is.na(review)),
+         !(is.na(state)))
+print("Initial number of rows:")
+print(nrow(book_reviews))
+print("number of filtered rows")
+print(nrow(filter_book_reviews))
+
+print(dim(filter_book_reviews))
+```
+
+```{r}
+
+clean_data <- filter_book_reviews %>%
+  mutate(
+    state = case_when(
+      state == "Texas" ~ "TX",
+      state == "California" ~ "CA",
+      state == "Florida" ~ "FL",
+      state == "New York" ~ "NY",
+      TRUE ~ state # ignore when already in correct format
+    )
+  )
+
+glimpse(clean_data)
+
+```
+
+```{r}
+
+reviews <- clean_data %>%
+  mutate(
+    review_num = case_when(
+      review == "Poor" ~ 1,
+      review == "Fair" ~ 2,
+      review == "Good" ~ 3,
+      review == "Great" ~ 4,
+      review == "Excellent" ~ 5
+    ),
+    is_high_review =
+      if_else(review_num >= 4, TRUE, FALSE)
+  )
+
+glimpse(reviews)
+
+```
+
+```{r}
+
+library(tidyverse)
+
+all_states <- unique(reviews$state)
+
+summary_sales <- reviews %>%
+  group_by(state, book) %>%
+  summarize(
+    total_sales = sum(price),
+    number_sales = n(),
+    average_rating = mean(review_num)
+            ) %>%
+  arrange(desc(total_sales), .group_by = FALSE)
+
+summary_sales
+
+
+```

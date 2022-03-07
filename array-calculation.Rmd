@@ -1,0 +1,41 @@
+---
+title: "Python + R"
+output: html_document
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{python}
+import numpy as np
+height = [1.74, 1.81, 1.65, 1.79, 1.58]
+weight = [67, 84, 69, 75, 65]
+
+bmi_data = np.array([height, weight])
+
+bmi = bmi_data[1, :]/ bmi_data[0, :]**2
+# bmi = np.array(weight)/np.array(height)**2
+bmi_over_25 = bmi[bmi>25]
+
+print(bmi)
+print(bmi_over_25)
+```
+
+```{r}
+library(tidyverse)
+height <- c(1.74, 1.81, 1.65, 1.79, 1.58)
+weight <- c(67, 84, 69, 75, 65)
+
+bmi_data = tibble(height = height, weight = weight)
+
+bmi = bmi_data$weight/bmi_data$height^2
+# bmi <- weight/height^2
+bmi_over_25 <- bmi[bmi>25]
+
+bmi
+bmi_over_25
+```
+

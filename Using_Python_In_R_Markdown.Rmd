@@ -1,0 +1,139 @@
+---
+title: "Practice_with_Python_R_ML"
+author: "Matt Rosinski"
+date: "25/08/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+``` {r}
+
+library(tidyverse)
+library(reticulate)
+
+# knitr::opts_chunk$set(echo = TRUE)
+# > repl_python()
+
+conda_list()
+use_condaenv("py3.8", required = TRUE)
+py_config()
+
+```
+```{python}
+# Is python working?
+
+1+1
+
+
+```
+
+
+``` {python}
+
+ # Run> repl_python() in console after getting py_call_impl() type error then escape back to R
+ 
+
+import numpy as np
+import pandas as pd
+import matplotlib as plt
+
+
+np.arange(1, 10)
+
+# Make a sequence in a data frame using dict format
+df = pd.DataFrame(data = {"sequence":np.arange(1,20,.01)})
+
+# Use assign (mutate) equivalent to calculate the np.sin() of the series
+df = df.assign(value=np.sin(df["sequence"]))
+
+df
+
+df.plot(x="sequence", y = "value", title = "Matplotlib")
+
+```
+
+``` {python}
+
+from sklearn.ensemble import RandomForestClassifier
+
+clf = RandomForestClassifier(random_state=0)
+
+X = [[ 1,  2,  3],  # 2 samples, 3 features
+     [11, 12, 13]]
+
+y = [0, 1]  # classes of each sample
+
+clf.fit(X, y)
+
+clf.predict(X)  # predict classes of the training data
+
+```
+```{python}
+
+from sklearn.cluster import AffinityPropagation
+from sklearn.datasets import make_blobs
+
+# #############################################################################
+# Generate sample data
+centers = [[1, 1], [-1, -1], [1, -1]]
+X, labels_true = make_blobs(n_samples=300, centers=centers, cluster_std=0.5,
+                            random_state=0)
+
+# Compute Affinity Propagation
+af = AffinityPropagation(preference=-50).fit(X)
+cluster_centers_indices = af.cluster_centers_indices_
+labels = af.labels_
+
+n_clusters_ = len(cluster_centers_indices)
+
+# #############################################################################
+# Plot result
+import matplotlib.pyplot as plt
+from itertools import cycle
+
+plt.close('all')
+plt.figure(1)
+plt.clf()
+
+colors = cycle('bgrcmykbgrcmykbgrcmykbgrcmyk')
+for k, col in zip(range(n_clusters_), colors):
+    class_members = labels == k
+    cluster_center = X[cluster_centers_indices[k]]
+    plt.plot(X[class_members, 0], X[class_members, 1], col + '.')
+    plt.plot(cluster_center[0], cluster_center[1], 'o', markerfacecolor=col,
+             markeredgecolor='k', markersize=14)
+    for x in X[class_members]:
+        plt.plot([cluster_center[0], x[0]], [cluster_center[1], x[1]], col)
+
+plt.title('Estimated number of clusters: %d' % n_clusters_)
+plt.show()
+
+```
+
+```{python}
+pip install --"mattrosinski@gmail.com" kaggle
+```
+
