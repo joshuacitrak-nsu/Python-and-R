@@ -1,0 +1,95 @@
+---
+title: "summarise-dataframes"
+author: "Matt Rosinski"
+date: "10/03/2022"
+output: html_document
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+data(mtcars)
+readr::write_csv(mtcars, "data/mtcars.csv")
+```
+
+```{python}
+import pandas as pd
+mtcars_df = pd.read_csv(filepath_or_buffer="data/mtcars.csv")
+
+mtcars_df.describe()
+
+```
+
+```{r}
+library(tidyverse)
+library(rebus)
+library(stats)
+stats_table <- summary(mtcars)
+
+pattern <- one_or_more(DGT) %R% optional(".") %R% optional(one_or_more(DGT))
+
+get_labels <- as.data.frame.matrix(stats_table)[,1]
+location <- str_locate_all(pattern =':', get_labels)[[1]][1]
+strip_punct <- zero_or_more(PUNCT) %R% zero_or_more(SPACE) %R% PUNCT
+
+identity <- str_remove_all(str_sub(string = get_labels, start = 1, end = location), strip_punct)
+
+stats_df <- as.data.frame.matrix(stats_table) %>%
+    mutate(across(everything(), ~str_match(., pattern))) %>%
+    mutate(identity = identity) %>%
+    relocate(identity)
+
+stats_df
+
+mtcars %>%
+    summarise_all(~ mean(.,na.rm=TRUE))
+
+test <- c("some text: 34.0", "more: 23.1", "remove this: 53")
+
+str_match(test, pattern)
+
+pattern_text <- START %R% 
+    one_or_more(alpha()) %R% 
+    optional(one_or_more(SPACE)) %R% 
+    one_or_more(alpha()) %R% 
+    zero_or_more(".") %R%
+    one_or_more(SPACE) %R% ":"
+# pattern_text <- START %R% one_or_more(ANY_CHAR) %R% ":"
+
+str_view(test, pattern_text)
+str_extract(test, pattern_text)
+
+# Some strings to practice with
+x <- c("cat", "coat", "scotland", "tic toc")
+
+# Print END
+END
+
+# Run me
+str_view(x, pattern = START %R% "c")
+
+mtcars %>%
+    summarise(across(everything(), 
+                     .fns = list(
+                         min = min,
+                         mean = ~ mean(., na.rm=TRUE),
+                         median = median,
+                         stdev = sd,
+                         percentile_25 = ~ quantile(., .25)[[1]],
+                         percentile_75 = ~ quantile(., .75)[[1]],
+                         max = max)
+                     )
+              )
+
+?quantile()
+p <- rnorm(1000)
+p
+hist(p)
+quantile(p, .25)[[1]]
+args(quantile)
+```
+
