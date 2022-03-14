@@ -11,37 +11,26 @@ editor_options:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r}
-numbers <- c(21, 1, 2021)
-
-numbers + 1
-
-```
 ```{python}
-nums = [21, 1, 2021]
+# Create list comprehension: squares
+squares = [i**2 for i in range(0,10)]
 
-# using just nums + 1 will result in a TypeError.  
-# Python thinks you want to concatenate.
+print(squares)
 
-[each + 1 for each in nums]
+jean = '12345'
+letters = [i*3 for i in jean ]
 
+print(letters)
 ```
 
 ```{python}
-nums = [23, 17, 42, 9]
-extra = [3]
+# Create a 5 x 5 matrix using a list of lists: matrix
+matrix = [[col for col in range(5,11)] for row in range(0,5)]
 
-nums + extra
-```
-```{r}
-numbers <- c(23, 17, 42, 9)
+# Print the matrix
+for row in matrix:
+    print(row)
 
-c(numbers, 3)
+
 ```
 

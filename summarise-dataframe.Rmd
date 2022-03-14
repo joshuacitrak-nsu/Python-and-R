@@ -25,10 +25,34 @@ mtcars_df.describe()
 ```
 
 ```{r}
+library(reprex)
+```
+
+
+```{r}
+lapply(mtcars, summary)
+
+do.call(cbind, lapply(mtcars, summary))
+
+t(do.call(rbind, lapply(mtcars, summary)))
+
+
+
+do.call(rbind, lapply(mtcars, FUN = function(.x) mean(.x, na.rm = TRUE)))
+
+library(purrr)
+
+do.call(cbind, map(mtcars, summary))
+
+```
+
+```{r}
+reprex(venue = "so", tidyverse_quiet = TRUE,  {
 library(tidyverse)
 library(rebus)
-library(stats)
+    
 stats_table <- summary(mtcars)
+stats_table
 
 pattern <- one_or_more(DGT) %R% optional(".") %R% optional(one_or_more(DGT))
 
@@ -46,8 +70,42 @@ stats_df <- as.data.frame.matrix(stats_table) %>%
 stats_df
 
 mtcars %>%
-    summarise_all(~ mean(.,na.rm=TRUE))
+    summarise_all( .funs = list(
+                         min = min,
+                         mean = ~ mean(., na.rm=TRUE),
+                         median = median,
+                         stdev = sd,
+                         percentile_25 = ~ quantile(., .25)[[1]],
+                         percentile_75 = ~ quantile(., .75)[[1]],
+                         max = max)
+                     ) %>% glimpse()
 
+})
+```
+
+```{r}
+library(reprex)
+reprex(venue = "so", tidyverse_quiet = TRUE,  {
+library(skimr)
+library(tidyverse)
+mtcars %>% skim()
+}
+)
+```
+
+
+```{r}
+library(dlookr)
+
+mtcars %>% describe()
+
+library(pscyh)
+t(psych::describe(mtcars))
+```
+
+
+
+```{r}
 test <- c("some text: 34.0", "more: 23.1", "remove this: 53")
 
 str_match(test, pattern)

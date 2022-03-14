@@ -1,7 +1,7 @@
 ---
-title: "anonymous-functions"
+title: "anonymous functions"
 author: "Matt Rosinski"
-date: "3/8/2022"
+date: "12/03/2022"
 output: html_document
 editor_options: 
   chunk_output_type: inline
@@ -12,6 +12,41 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{python}
+# Define echo_word as a lambda function: echo_word
+echo_word = (lambda word1, echo: word1 * echo)
+
+result = echo_word('hey', 5)
+
+print(result)
+```
+
+```{r}
+# Define echo_word as an anonymous function: echo_word
+echo_word <-  function(word, echo) paste(c(rep(word, echo)),collapse = "")
+
+result <- echo_word('hey', 5)
+
+result
+```
+
+```{python}
+# Create a list of strings: spells
+spells = ["protego", "accio", "expecto patronum", "legilimens"]
+
+# Use map() to apply a lambda function over spells: shout_spells
+shout_spells = map(lambda item: item.upper() + '!!!', spells)
+
+# Convert shout_spells to a list: shout_spells_list
+shout_spells_list = list(shout_spells)
+
+print(spells)
+# Print the result
+print(shout_spells_list)
+```
+
+# Using a filter
+```{python}
+# Create a list of strings: fellowship
 fellowship = ['frodo', 'samwise', 'merry', 'pippin', 'aragorn', 'boromir', 'legolas', 'gimli', 'gandalf']
 
 # Use filter() to apply a lambda function over fellowship: result
@@ -24,58 +59,121 @@ result_list = list(result)
 print(result_list)
 ```
 
+# An anonymous function is not required in R
 ```{r}
-
-fellowship <- c('frodo', 'samwise', 'merry', 'pippin', 'aragorn', 'boromir', 'legolas', 'gimli', 'gandalf')
+# Create a list of strings: fellowship
+fellowship <-  c('frodo', 'samwise', 'merry', 'pippin', 'aragorn', 'boromir', 'legolas', 'gimli', 'gandalf')
 
 fellowship[nchar(fellowship) > 6]
 
 ```
-# Reduce a list of jedi names into one 
+
+# Print tweets that match search string 'RT' in first 2 characters
 ```{python}
-from functools import reduce
+import pandas as pd
 
-# Create a list of strings: stark
-jedi = ['luke', 'obiwan', 'yoda', 'anikan', 'rey']
+# Import Twitter data as DataFrame: df
+tweets_df = pd.read_csv('./data/tweets.csv')
 
-# Use reduce() to apply a lambda function over stark: result
-result = reduce(lambda item1, item2: item1 + item2, jedi)
+# Select retweets from the Twitter DataFrame: result
+result = filter(lambda x: x[0:2] == 'RT', tweets_df['text'])
 
-print(result)
+# Create list from filter object result: res_list
+res_list = list(result)
+
+# Print all retweets in res_list
+for tweet in res_list:
+    print(tweet)
+
+```
+
+```{python}
+import pandas as pd
+
+# Import Twitter data as DataFrame: df
+tweets_df = pd.read_csv('./data/tweets.csv')
+
+# Define count_entries()
+def count_entries(df, col_name='lang'):
+    """Return a dictionary with counts of
+    occurrences as value for each key."""
+
+    # Initialize an empty dictionary: cols_count
+    cols_count = {}
+
+    # Add try block
+    try:
+        # Extract column from DataFrame: col
+        col = df[col_name]
+        
+        # Iterate over the column in DataFrame
+        for entry in col:
+    
+            # If entry is in cols_count, add 1
+            if entry in cols_count.keys():
+                cols_count[entry] += 1
+            # Else add the entry to cols_count, set the value to 1
+            else:
+                cols_count[entry] = 1
+    
+        # Return the cols_count dictionary
+        return cols_count
+
+    # Add except block
+    except:
+        'The DataFrame does not have a ' + col_name + ' column.'
+
+# Call count_entries(): result1
+result1 = count_entries(tweets_df, 'lang')
+
+# Print result1
+print(result1)
 ```
 
 ```{r}
-library(purrr)
-
-jedi <- c('luke', 'obiwan', 'yoda', 'anikan', 'rey')
-
-# There are some simple functions for pasting strings in R (see also str_c)
-result <- paste0(jedi,collapse = "")
-
-# Base R and purrr have a Reduce and reduce function that work similarly
-result <- reduce(jedi, paste0, collapse = "")  # The purrr version shown here
-
-result
+library(reticulate)
+py_discover_config()
 ```
 
+# Raise a Value error is column not matched
+```{python}
+import pandas as pd
 
-```{r}
-S <- cards()
-A <- subset(S, suit == "Heart")
-B <- subset(S, rank == "A" )
-intersect(A, B)
+# Import Twitter data as DataFrame: df
+tweets_df = pd.read_csv('./data/tweets.csv')
+# Define count_entries()
+def count_entries(df, col_name='lang'):
+    """Return a dictionary with counts of
+    occurrences as value for each key."""
+    
+    # Raise a ValueError if col_name is NOT in DataFrame
+    if col_name not in df.columns:
+        raise ValueError('The DataFrame does not have a ' + col_name + ' column.')
 
-?intersect()
+    # Initialize an empty dictionary: cols_count
+    cols_count = {}
+    
+    # Extract column from DataFrame: col
+    col = df[col_name]
+    
+    # Iterate over the column in DataFrame
+    for entry in col:
 
-(x <- c(sort(sample(1:20, 9)), NA))
-(y <- c(sort(sample(3:23, 7)), NA))
-union(x, y)
-intersect(x, y)
-setdiff(x, y)
-setdiff(y, x)
-setequal(x, y)
+        # If entry is in cols_count, add 1
+        if entry in cols_count.keys():
+            cols_count[entry] += 1
+            # Else add the entry to cols_count, set the value to 1
+        else:
+            cols_count[entry] = 1
+        
+        # Return the cols_count dictionary
+        return cols_count
 
+# Call count_entries(): result1
+result1 = count_entries(df=tweets_df, col_name='lang')
 
-
+# Print result1
+print(result1)
 ```
 
+z
