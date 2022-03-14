@@ -25,6 +25,21 @@ mtcars_df.describe()
 ```
 
 ```{r}
+do.call(cbind, lapply(mtcars, summary))
+
+# library(dlookr)
+# mtcars %>% describe()
+# 
+# library(skimr)
+# skim(mtcars)
+```
+
+```{r}
+
+```
+
+
+```{r}
 library(reprex)
 ```
 
