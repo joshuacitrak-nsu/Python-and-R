@@ -1,0 +1,38 @@
+---
+title: "summarisation"
+author: "Matt Rosinski"
+date: "3/22/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+mtcars
+```
+
+# Summarisation
+```{python}
+
+mtcars = r.mtcars
+# Print the head of the sales DataFrame
+print(mtcars.head())
+
+# Print the info about the sales DataFrame
+print(mtcars.info())
+
+# Print the mean of weekly_sales
+print(mtcars["mpg"].mean())
+
+# Print the median of weekly_sales
+print(mtcars["mpg"].median())
+
+# Print the maximum of the date column
+print(sales["date"].max())
+
+# Print the minimum of the date column
+print(sales["date"].min())
+```
+

@@ -1,0 +1,132 @@
+---
+title: "subsetting"
+author: "Matt Rosinski"
+date: "3/22/2022"
+output: html_document
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(modeldata)
+library(tidyverse)
+library(nycflights13)
+library(nasaweather)
+library(fueleconomy)
+library(babynames)
+
+data("ames")
+
+ames %>% glimpse()
+
+ames %>% 
+    count(Bldg_Type)
+
+nycflights13::planes %>%
+    count(manufacturer, sort = TRUE)
+
+nycflights13::airlines
+```
+
+```{python}
+# Subset for rows in South Atlantic or Mid-Atlantic regions
+south_mid_atlantic = homelessness[homelessness["region"].isin(["South Atlantic", "Mid-Atlantic"])]
+
+# See the result
+print(south_mid_atlantic)
+
+
+# The Mojave Desert states
+canu = ["California", "Arizona", "Nevada", "Utah"]
+
+# Filter for rows in the Mojave Desert states
+mojave_homelessness = homelessness[homelessness["state"].isin(canu)]
+
+# See the result
+print(mojave_homelessness)
+
+# Add total col as sum of individuals and family_members
+homelessness["total"] = homelessness["individuals"] + homelessness["family_members"]
+
+# Add p_individuals col as proportion of total that are individuals
+homelessness["p_individuals"] = homelessness["individuals"]/homelessness["total"]
+
+# See the result
+print(homelessness)
+```
+
+```{python}
+# Create indiv_per_10k col as homeless individuals per 10k state pop
+homelessness["indiv_per_10k"] = 10000 * homelessness["individuals"] / homelessness["state_pop"] 
+
+# Subset rows for indiv_per_10k greater than 20
+high_homelessness = homelessness[homelessness["indiv_per_10k"]>20]
+
+# Sort high_homelessness by descending indiv_per_10k
+high_homelessness_srt = high_homelessness.sort_values("indiv_per_10k", ascending = False)
+
+# From high_homelessness_srt, select the state and indiv_per_10k cols
+result = high_homelessness_srt[["state", "indiv_per_10k"]]
+
+# See the result
+print(result)
+```
+
+```{r}
+# devtools::install_github("alastairrushworth/inspectdf")
+library(inspectdf)
+
+starwars %>%
+    inspect_types()
+
+starwars %>%
+    inspect_cat()
+```
+
+How to Use the Similarity Principle to Learn a New Programming Language (and Write Readable Code).  Patterns of code you have learnt in one programming language may be of use when learning another.  This week I show you how I applied tidyverse patterns I use in R to Python.  Finding similarities between what you know and what you don't are key to making new connections in your brain when learning new things.  Each week I publish an ultrashort newsletter that compares and contrasts how to do one specific data science job in Python + R.  The newsletter can be consumed in 5 minutes or less. 
+
+
+
+#datascience #programming #language #pythonandr #machinatoonist #rstats #python #datascientist #learningbydoing #learndatascience #similarity #starwars
+
+```{r}
+library(tidyverse)
+starwars_df <- starwars %>% select(-c(films, vehicles, starships))
+
+planets <- c("Naboo", "Tatooine")
+
+starwars_df %>% 
+    filter(homeworld %in% planets) %>%
+    filter(!(species == "Droid")) %>%
+    filter(height <= 172) %>%
+    arrange(desc(height))
+```
+
+```{python}
+import pandas as pd
+starwars = r.starwars_df
+
+planets = ["Naboo", "Tatooine"]
+
+starwars[
+    starwars["homeworld"].isin(planets) & \
+    (starwars["species"] != "Droid") & \
+    (starwars["height"] <= 172)
+].sort_values("height", ascending = False)
+```
+
+# Alternative approach
+```{python}
+filter1 = starwars["homeworld"].isin(planets)
+filter2 = starwars["species"] != "Droid"
+filter3 = starwars["height"] <= 172
+starwars[filter1 & \
+        filter2 & \
+        filter3].sort_values("height", ascending = False)
+
+```
+
