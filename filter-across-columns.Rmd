@@ -1,0 +1,32 @@
+---
+title: "filter across multiple columns"
+author: "Matt Rosinski"
+date: "3/25/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# How to filter across multiple columns
+```{r}
+library(dplyr)
+library(stringr)
+
+test_string <- "this string has coffee"
+detect_pattern <- function(x) {
+  stringr::str_detect(str_to_lower(x), pattern = "coffee")
+}
+detect_pattern(test_string)
+
+df %>%
+  filter(if_any(.cols = everything(), .fns = ~ detect_pattern(.x))) %>% 
+  View()
+
+df %>%
+  filter_all(any_vars(str_detect(str_to_lower(.), pattern = "coffee")))
+
+
+```
+
