@@ -1,0 +1,76 @@
+---
+title: "creating dataframes"
+author: "Matt Rosinski"
+date: '2022-05-02'
+output: html_document
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{python}
+import pandas as pd
+
+# Create Dataframes using a list of dictionaries
+list_of_dictionaries = [
+    {"FirstName": "Luke", "LastName": "Skywalker", "Height":172},
+    {"FirstName": "Rey", "LastName": "Skywalker", "Height":170},
+    {"FirstName": "Sheev", "LastName": "Palpatine", "Height":170}]
+
+df = pd.DataFrame(list_of_dictionaries)
+
+# Create dataframes using a dictionary of lists
+dictionary_of_lists = {
+    "FirstName": ["Luke", "Rey", "Sheev"],
+    "LastName": ["Skywalker", "Skywalker", "Palpatine"],
+    "Height": [172, 170, 170]
+}
+
+df = pd.DataFrame(dictionary_of_lists)
+
+df
+```
+
+```{r}
+library(tidyverse)
+library(tibble)
+
+# Create a dataframe from a named list
+named_list <- list(
+    FirstName = c("Luke", "Rey", "Sheev"),
+    LastName = c("Skywalker", "Skywalker", "Palpatine"),
+    Height = c(172, 170, 170))
+
+df <- as_tibble(named_list)
+
+# Alternate construction
+df <- tibble(
+    FirstName = c("Luke", "Rey", "Sheev"),
+    LastName = c("Skywalker", "Skywalker", "Palpatine"),
+    Height = c(172, 170, 170)
+)
+
+# Easy to read construction of a tibble
+df <- tribble(
+    ~FirstName, ~LastName, ~Height,
+    "Luke", "Skywalker", 172,
+    "Rey", "Skywalker", 170,
+    "Sheev", "Palpatine", 170
+)
+
+df
+```
+
+```{r}
+library(tidyerse)
+starwars %>% 
+    select(name, height, species) %>%
+    filter(height < 180 & species == "Human") %>%
+    
+    # mutate(FirstName = str_split(name, pattern = " ", n = 2)) %>% 
+    # unnest(FirstName)
+```
+

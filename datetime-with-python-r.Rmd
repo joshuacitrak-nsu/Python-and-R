@@ -1,0 +1,319 @@
+---
+title: "working-with-date-time"
+author: "Matt Rosinski"
+date: '2022-04-10'
+output: html_document
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{python}
+import pandas as pd
+import os
+import numpy as np
+# https://assets.datacamp.com/production/repositories/3551/datasets/60b0dadeb28c0433e772835bd142809f8da3e8aa/florida_hurricane_dates.pkl
+florida_hurricane_dates =  pd.read_pickle("data/florida_hurricane_dates.pkl")
+
+print(florida_hurricane_dates[0:10])
+
+df = pd.DataFrame(florida_hurricane_dates, columns = ['date_of_hurricane'])
+
+df
+
+# display(df)
+
+# Counter for how many before June 1
+early_hurricanes = 0
+
+# We loop over the dates
+for hurricane in florida_hurricane_dates:
+  # Check if the month is before June (month number 6)
+  if hurricane.month < 6:
+    early_hurricanes = early_hurricanes + 1
+    
+print(early_hurricanes)
+
+# Import date
+from datetime import date
+
+# Create a date object for May 9th, 2007
+start = date(2007, 5, 9)
+
+# Create a date object for December 13th, 2007
+end = date(2007, 12, 13)
+
+# Subtract the two dates and print the number of days
+print((end - start).days)
+
+```
+
+```{python}
+# Import pandas
+import pandas as pd
+
+# Load data with dates
+rides = pd.read_csv('https://bit.ly/datetime-data', 
+    parse_dates = ["Start date", "End date"])
+    
+print(rides.info())
+
+# Load data without specifying column types
+rides = pd.read_csv('https://bit.ly/datetime-data')
+
+print(rides.info())
+
+rides['Start date'] = pd.to_datetime(rides['Start date'], format = "%Y-%m-%d %H:%M:%S")
+rides['End date'] = pd.to_datetime(rides['End date'], format = "%Y-%m-%d %H:%M:%S")
+
+print(rides.info())
+
+```
+
+
+```{python}
+# Print the initial (0th) row
+print(rides.iloc[0])
+
+# Subtract the start date from the end date
+ride_durations = rides["End date"] - rides["Start date"]
+
+# Convert the results to seconds
+rides["Duration"] = ride_durations.dt.total_seconds()
+
+print(rides['Duration'].head())
+
+
+```
+
+```{python}
+# Create joyrides
+joyrides = (rides["Start station"] == rides["End station"])
+
+# Total number of joyrides
+print("{} rides were joyrides".format(joyrides.sum()))
+
+# Median of all rides
+print("The median duration overall was {:.2f} seconds"\
+      .format(rides['Duration'].median()))
+
+# Median of joyrides
+print("The median duration for joyrides was {:.2f} seconds"\
+      .format(rides[joyrides]['Duration'].median()))
+```
+
+```{python}
+# Import matplotlib
+plt.close()
+import matplotlib.pyplot as plt
+
+# Resample rides to daily, take the size, plot the results
+rides.resample('D', on = 'Start date')\
+  .size()\
+  .plot(ylim = [0, 15])
+
+# Show the results
+plt.show()
+```
+
+# Summarise by time
+```{python}
+# Import matplotlib
+plt.clf()
+
+import matplotlib.pyplot as plt
+
+# Resample rides to monthly, take the size, plot the results
+rides.resample('M', on = 'Start date')\
+  .size()\
+  .plot(ylim = [0, 150])
+
+# Show the results
+plt.show()
+```
+
+# Create a pandas series and summarise
+```{python}
+# Resample rides to be monthly on the basis of Start date
+monthly_rides = rides.resample('M', on ='Start date')['Member type']
+
+type(monthly_rides)
+
+# Take the ratio of the .value_counts() over the total number of rides
+print(monthly_rides.value_counts() / monthly_rides.size())
+```
+
+# Find median ride by month and member type
+```{python}
+# Import pandas
+import pandas as pd
+
+# Load data with dates
+rides = pd.read_csv('https://bit.ly/datetime-data', 
+    parse_dates = ["Start date", "End date"])
+    
+# Subtract the start date from the end date
+ride_durations = rides["End date"] - rides["Start date"]
+
+# Convert the results to seconds
+rides["Duration"] = ride_durations.dt.total_seconds()
+
+# Group rides by member type, and resample to the month
+grouped_summary = rides[['Start date', 'Member type', 'Duration']]\ 
+  .groupby('Member type')\
+  .resample('MS', on = 'Start date')\
+  .median()\
+  .reset_index()
+
+# Print the median duration for each group
+print(grouped_summary)
+
+```
+
+```{python}
+print(rides.head())
+```
+
+# Find median ride by month and member type
+```{r}
+library(timetk)
+library(tidyverse)
+library(lubridate)
+
+rides <- read_csv('https://bit.ly/datetime-data')
+rides %>% glimpse()
+# Calculate ride duration
+# Group by month and member type
+# Return median ride duration in seconds
+
+rides %>%
+  mutate(Duration = interval(`Start date`, `End date`)/dseconds(1)) %>% 
+  group_by(`Member type`) %>%
+  summarize_by_time(.date_var = `Start date`, 
+                    .by = "month", 
+                    .type = "ceiling",
+                    median = median(`Duration`)
+                    ) %>%
+  mutate(`Start date` = `Start date` %-time% "1 day")
+
+```
+# Find median ride by month and member type
+```{r}
+library(timetk)
+library(tidyverse)
+library(lubridate)
+
+rides <- read_csv('https://bit.ly/datetime-data')
+rides %>% glimpse()
+# Calculate ride duration
+# Group by month and member type
+# Return median ride duration in seconds
+
+rides %>%
+  mutate(Duration = interval(`Start date`, `End date`)/dseconds(1)) %>% 
+  group_by(`Member type`) %>%
+  summarize_by_time(.date_var = `Start date`, 
+                    .by = "month", 
+                    .type = "floor",
+                    median = median(`Duration`)
+                    ) 
+
+```
+
+# Time zone adjustment
+```{python}
+# Localize the Start date column to America/New_York
+rides['Start date'] = rides['Start date'].dt.tz_localize('America/New_York', ambiguous='NaT')
+
+# Print first value
+print(rides['Start date'].iloc[0])
+
+# Convert the Start date column to Europe/London
+rides['Start date'] = rides['Start date'].dt.tz_convert('Europe/London')
+
+# Print the new value
+print(rides['Start date'].iloc[0])
+```
+
+# Summarise by weekday
+```{python}
+# Add a column for the weekday of the start of the ride
+rides['Ride start weekday'] = rides['Start date'].dt.day_name()
+
+# Print the median trip time per weekday
+print(rides.groupby('Ride start weekday')['Duration'].median())
+
+```
+
+# Time between rides
+```{python}
+rides['Start date'] = rides['Start date'].dt.tz_convert('America/New_York')
+
+rides['End date'] = rides['End date'].dt.tz_localize('America/New_York', ambiguous='NaT')
+
+# Shift the index of the end date up one; now subract it from the start date
+rides['Time since'] = rides['Start date'] - (rides['End date'].shift(1))
+
+# Move from a timedelta to a number of seconds, which is easier to work with
+rides['Time since'] = rides['Time since'].dt.total_seconds()
+
+# Resample to the month
+monthly = rides.resample('M', on = 'Start date')
+
+# Print the average hours between rides each month
+print(monthly['Time since'].mean()/(60*60))
+```
+
+# Import data with dates with R
+```{r}
+library(lubridate)
+library(tidyverse)
+rides <- read_csv('https://bit.ly/datetime-data')
+
+# readr::read_csv guesses the datetime columns without specification
+rides %>% glimpse()
+
+# Let's simulate the datetime columns not being imported correctly
+rides <- rides %>%
+    mutate(`Start date` = as.character(`Start date`),
+           `End date` = as.character(`End date`))
+
+rides %>% glimpse()
+
+# Use lubridate to clean up columns that were not parsed as datetime fields
+rides <- rides %>%
+    mutate(`Start date` = ymd_hms(`Start date`),
+           `End date` = ymd_hms(`End date`))
+
+rides %>% glimpse()
+```
+
+# Plot time series in Python
+```{python}
+import pandas as pd
+import matplotlib.pyplot as plt
+
+plt.close()
+
+rides = pd.read_csv('https://bit.ly/datetime-data', 
+    parse_dates = ["Start date", "End date"]
+
+rides.resample('D', on = 'Start date')\
+  .size()\
+  .plt.plot('Start date', , color = '0')
+# ylim = [0, 15]
+plt.title('Rides over Time')
+plt.xlabel('Date')
+plt.ylabel('Number of rides')
+
+
+plt.tight_layout()
+
+plt.show()
+
+    
+```
+

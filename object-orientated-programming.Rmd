@@ -1,0 +1,407 @@
+---
+title: "object oriented programming"
+author: "Matt Rosinski"
+date: '2022-04-30'
+output: html_document
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{python}
+class Employee:
+  
+  def set_name(self, new_name):
+    self.name = new_name
+  
+  # Add set_salary() method
+  def set_salary(self, new_salary):
+    self.salary = new_salary
+
+```
+
+```{python}
+# Create an object emp of class Employee  
+emp = Employee()
+
+# Use set_name to set the name of emp to 'Korel Rossi'
+emp.set_name('Korel Rossi')
+
+# Set the salary of emp to 50000
+emp.set_salary(50000)
+
+# We can access the attributes like this
+print(emp.name)
+print(emp.salary)
+```
+
+```{r}
+library(R6)
+
+?R6::R6Class()
+
+Employee = 
+    R6Class("Employee",
+            # Store data you don't want the user to access in the private element
+               private = list(
+                   name = 'Blank',
+                   salary = 0
+               ),
+            # Store functions you want the user to access in the active or public element
+               public = list(
+                   set_name =  function(new_name) {
+                       private$name <-  new_name},
+                   set_salary = function(new_salary) {
+                       private$salary <- new_salary},
+                   get_name = function() private$name,
+                   get_salary = function() private$salary,
+                   initialize = function(name, salary) {
+                       if(!missing(name)) {
+                           private$name <- name}
+                       if(!missing(salary)) {
+                           private$salary <- salary}}
+               ))
+```
+
+# First we forget to specify the name and salary
+```{r}
+emp <- Employee$new()
+```
+
+# So the name and salary are blank
+```{r}
+emp$get_name()
+emp$get_salary()
+
+```
+
+# We can update the object with the name and salary after creation
+```{r}
+emp$set_name('Korel Rossi')
+emp$set_salary('50000')
+emp$get_name()
+emp$get_salary()
+```
+
+```{r}
+library(assertive)
+
+Employee = 
+    R6Class("Employee",
+            # Store data you don't want the user to access in the private element
+               private = list(
+                   ..name = 'Blank',
+                   ..salary = 0
+               ),
+            # Store functions you want the user to access in the active or public element
+               # public = list(
+               #     initialize = function(name, salary) {
+               #         if(!missing(name)) {
+               #             private$name <- name}
+               #         if(!missing(salary)) {
+               #             private$salary <- salary}}
+               # ),
+            # Active binding allow for restricted access to the private data
+               active = list(
+                   name =  function(value) {
+                       if(missing(value)) {
+                           private$..name} else {
+                               assert_is_a_string(value)
+                               private$..name <- value
+                               }
+                       },
+                   salary = function(value) {
+                       if(missing(value)) {
+                           private$..salary} else {
+                               assert_is_a_number(value)
+                               private$..salary <- value
+                           }
+                   }
+               ))
+```
+
+```{r}
+emp = Employee$new()
+```
+
+```{r}
+emp$name
+emp$salary
+```
+
+```{r}
+emp$name <- 'Korel Rossi'
+emp$salary <- 50000
+```
+
+```{r}
+emp$name
+emp$salary
+```
+
+```{r}
+Person <- R6Class("Person",
+  public = list(
+    name = NULL,
+    hair = NULL,
+    initialize = function(name = NA, hair = NA) {
+      self$name <- name
+      self$hair <- hair
+      # self$greet()
+    }
+    # set_hair = function(val) {
+    #   self$hair <- val
+    # },
+    # greet = function() {
+    #   cat(paste0("Hello, my name is ", self$name, ".\n"))
+    # }
+  )
+)
+```
+
+```{r}
+pp <- Person$new()
+```
+
+```{r}
+pp$name <- 'Bob'
+pp$hair <- 'Blonde'
+```
+
+```{r}
+pp$name
+pp$hair
+```
+
+# Define a class in python and return monthly salary attribute.
+```{python}
+class Employee:
+    def set_name(self, new_name):
+        self.name = new_name
+    
+    def set_salary(self, new_salary):
+        self.salary = new_salary
+        
+    def give_raise(self, amount):
+        self.salary = self.salary + amount
+    
+    def monthly_salary(self):
+        return self.salary/12
+
+    
+emp = Employee()
+emp.set_name('Korel Rossi')
+emp.set_salary(50000)
+
+# Get monthly salary of emp and assign to mon_sal
+mon_sal = emp.monthly_salary()
+
+# Print mon_sal
+print(mon_sal)
+```
+
+# Using conditions to check entries
+```{python}
+class Employee:
+  
+    def __init__(self, name, salary=0):
+        self.name = name
+        # Modify code below to check if salary is positive
+        if salary > 0:
+            self.salary = salary
+        else:
+            self.salary = 0
+            print('Invalid salary!')
+   
+   # ...Other methods omitted for brevity ...
+      
+emp = Employee("Korel Rossi", -1000)
+print(emp.name)
+print(emp.salary)
+```
+
+# Adding more attributes to class initialisation
+```{python}
+# Import datetime from datetime
+from datetime import datetime
+
+class Employee:
+    
+    def __init__(self, name, hire_date, salary=0):
+        self.name = name
+        if salary > 0:
+          self.salary = salary
+        else:
+          self.salary = 0
+          print("Invalid salary!")
+          
+        # Add the hire_date attribute and set it to today's date
+        self.hire_date = datetime.today()
+        
+   # ...Other methods omitted for brevity ...
+      
+emp = Employee("Korel Rossi", -1000)
+print(emp.name)
+print(emp.salary)
+```
+
+# Define a pretend visualisation class
+```{python}
+from numpy import sqrt
+class Point:
+
+    def __init__(self, x=0.0, y=0.0):
+        self.x = x 
+        self.y = y 
+    
+    def distance_to_origin(self):
+        return sqrt(self.x ** 2 + self.y **2)
+    
+    def reflect(self, axis):
+        if axis == 'x':
+            self.y = -self.y
+        elif axis == 'y':
+            self.x = -self.x
+        else:
+            print("Enter either 'x' or 'y' for axis to reflect")
+
+pt = Point(x=3.0)
+pt.reflect("y")
+print((pt.x, pt.y))
+pt.y = 4.0
+print(pt.distance_to_origin())
+
+```
+# Class level attributes
+```{python}
+# Create a Player class
+class Player:
+    MAX_POSITION = 10
+    def __init__(self, position=0):
+        self.position = position
+
+
+# Print Player.MAX_POSITION       
+print(Player.MAX_POSITION)
+
+# Create a player p and print its MAX_POSITITON
+p = Player()
+print(p.MAX_POSITION)
+```
+
+# Very sensitive to spacing
+```{python}
+class Player:
+    MAX_POSITION = 10
+    
+    def __init__(self):
+        self.position = 0
+        
+    def move(self, steps):
+        if self.position + steps < Player.MAX_POSITION:
+            self.position = self.position + steps
+        else:
+            self.position = Player.MAX_POSITION
+            
+    def draw(self):
+        drawing = "-" * self.position + "|" +"-"*(Player.MAX_POSITION - self.position)
+        print(drawing)
+
+p = Player()
+
+p.draw()
+p.move(4); p.draw()
+p.move(5); p.draw()
+p.move(3); p.draw()
+```
+
+```{python}
+class BetterDate:    
+    # Constructor
+    def __init__(self, year, month, day):
+      # Recall that Python allows multiple variable assignments in one line
+      self.year, self.month, self.day = year, month, day
+    
+    # Define a class method from_str
+    @classmethod
+    def from_str(cls, datestr):
+        # Split the string at "-" and convert each part to integer
+        parts = datestr.split("-")
+        year, month, day = int(parts[0]), int(parts[1]), int(parts[2])
+        # Return the class instance
+        return cls(year, month, day)
+        
+bd = BetterDate.from_str('2020-04-30')   
+print(bd.year)
+print(bd.month)
+print(bd.day)
+```
+# Class method definition
+```{python}
+# import datetime from datetime
+from datetime import datetime
+
+class BetterDate:
+    def __init__(self, year, month, day):
+      self.year, self.month, self.day = year, month, day
+      
+    @classmethod
+    def from_str(cls, datestr):
+      year, month, day = map(int, datestr.split("-"))
+      return cls(year, month, day)
+      
+    # Define a class method from_datetime accepting a datetime object
+    @classmethod
+    def from_datetime(cls,datetime):
+      year = datetime.year
+      month = datetime.month
+      day = datetime.day
+      return cls(year, month, day)
+
+# You should be able to run the code below with no errors: 
+today = datetime.today()     
+bd = BetterDate.from_datetime(today)   
+print(bd.year)
+print(bd.month)
+print(bd.day)
+```
+
+# Create a subclass
+```{python}
+class Employee:
+    MIN_SALARY = 30000
+    
+    def __init__(self, name, salary=MIN_SALARY):
+        self.name = name
+        if salary >= Employee.MIN_SALARY:
+            self.salary = salary
+        else:
+            self.salary = Employee.MIN_SALARY
+    def give_raise(self, amount):
+        self.salary += amount      
+        
+# MODIFY Manager class and add a display method
+class Manager(Employee):
+    def __init__(self, name, salary):
+        super().__init__(name, salary)
+    
+    def display(self):
+        print(f'Manager {self.name}')
+        return
+
+mng = Manager("Debbie Lashko", 86500)
+print(mng.name)
+
+# Call mng.display()
+mng.display()
+```
+
+```{python}
+mng.MIN_SALARY
+```
+
+# If you can't explain it, you don't know it.  Master the fundamental principles.
+# See what's there, what's simple and familiar

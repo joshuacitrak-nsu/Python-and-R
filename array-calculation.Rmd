@@ -39,3 +39,228 @@ bmi
 bmi_over_25
 ```
 
+```{python}
+sudoku_list = [[0, 0, 4, 3, 0, 0, 2, 0, 9], [0, 0, 5, 0, 0, 9, 0, 0, 1], [0, 7, 0, 0, 6, 0, 0, 4, 3], [0, 0, 6, 0, 0, 2, 0, 8, 7], [1, 9, 0, 0, 0, 7, 4, 0, 0], [0, 5, 0, 0, 8, 3, 0, 0, 0], [6, 0, 0, 0, 0, 0, 1, 0, 5], [0, 0, 3, 5, 0, 8, 6, 9, 0], [0, 4, 2, 9, 1, 0, 3, 0, 0]]
+```
+
+```{python}
+# Import NumPy
+import numpy as np
+
+print(sudoku_list)
+
+# Convert sudoku_list into an array
+sudoku_array = np.array(sudoku_list)
+
+# Print the type of sudoku_array 
+print(sudoku_array)
+```
+
+```{r}
+library(reticulate)
+sudoku_list <- py$sudoku_list
+
+sudoku_list
+
+array(sudoku_list)
+```
+
+```{python}
+# Create an array of zeros which has four columns and two rows
+zero_array = np.zeros((2,4))
+print(zero_array)
+```
+
+```{python}
+# Create an array of random floats which has six columns and three rows
+random_array = np.random.random((3,6))
+print(random_array)
+```
+
+```{python}
+import matplotlib.pyplot as plt
+# Create an array of integers from one to ten
+one_to_ten = np.arange(1, 11)
+
+doubling_array = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512]
+
+# Create your scatterplot
+plt.scatter(one_to_ten, doubling_array)
+plt.show()
+```
+
+```{python}
+sudoku_game = np.random.randint(1,10,(9,9))
+# print(sudoku_game)
+sudoku_solution = np.random.randint(1,10,(9,9))
+# print(sudoku_solution)
+
+game_and_solution = np.array((sudoku_game, sudoku_solution))
+
+print(game_and_solution)
+
+```
+# Create a 4D array
+```{python}
+new_sudoku_game = np.random.randint(1,10,(9,9))
+new_sudoku_solution = np.random.randint(1,10,(9,9))
+# Create a second 3D array of another game and its solution 
+new_game_and_solution = np.array((new_sudoku_game, new_sudoku_solution))
+
+# Create a 4D array of both game and solution 3D arrays
+games_and_solutions = np.array((game_and_solution, new_game_and_solution))
+
+# Print the shape of your 4D array
+print(games_and_solutions.shape)
+```
+```{python}
+print(games_and_solutions)
+```
+
+```{python}
+another_sudoku_game = np.random.randint(1,10,(9,9))
+another_sudoku_solution = np.random.randint(1,10,(9,9))
+
+another_game_and_solution = np.array((another_sudoku_game, another_sudoku_solution))
+
+
+# Create a 4D array of both game and solution 3D arrays
+games_and_solutions_n = np.array((game_and_solution, new_game_and_solution, another_game_and_solution))
+
+games_and_solutions_n.shape
+
+
+```
+
+# Append a new game solution pair to a pre-existing tensor
+```{python}
+games_and_solutions.shape
+another_game_and_solution.shape
+another_game_and_solution = another_game_and_solution[np.newaxis, :]
+another_game_and_solution.shape
+
+another_games_and_solutions_n = np.concatenate((games_and_solutions, another_game_and_solution), axis = 0)
+
+another_games_and_solutions_n.shape
+```
+
+# Flattening and reshaping
+```{python}
+# Flatten sudoku_game
+flattened_game = sudoku_game.flatten()
+
+# Print the shape of flattened_game
+print(flattened_game.shape)
+```
+```{python}
+# Reshape flattened_game back to a nine by nine array
+print(flattened_game.shape)
+reshaped_game = flattened_game.reshape((9,9))
+
+# Print sudoku_game and reshaped_game
+print(sudoku_game)
+print(reshaped_game)
+print(reshaped_game.shape)
+```
+# dtype specification
+```{python}
+# Create an array of zeros with three rows and two columns
+zero_array = np.zeros((3, 2))
+
+# Print the data type of zero_array
+print(zero_array.dtype)
+
+# Create a new array of int32 zeros with three rows and two columns
+zero_int_array = np.zeros((3,2), dtype=np.int32)
+
+# Print the data type of zero_int_array
+print(zero_int_array.dtype)
+```
+# Change data type to conserve memory
+```{python}
+# Print the data type of sudoku_game
+print(sudoku_game.dtype)
+
+# Change the data type of sudoku_game to int8
+small_sudoku_game = sudoku_game.astype(np.int8)
+
+# Print the data type of small_sudoku_game
+print(small_sudoku_game.dtype)
+```
+
+```{python}
+# Row values
+small_sudoku_game[0]
+
+# Column values
+small_sudoku_game[:,0]
+
+small_sudoku_game
+```
+
+```{python}
+
+records = [ ('foo', 1, 2), \
+        ('bar', 'hello'), \
+        ('foo', 3, 4),]
+        
+def do_foo(x, y):
+ print('foo', x, y)
+ 
+def do_bar(s):
+ print('bar', s)
+ 
+for tag, *args in records:
+    if tag == 'foo':
+        do_foo(*args)
+    elif tag == 'bar':
+        do_bar(*args)
+
+```
+
+# * unpacking
+```{python}
+line = 'nobody:*:-2:-2:Unprivileged User:/var/empty:/usr/bin/false'
+uname, *fields, homedir, sh = line.split(':')
+uname
+homedir
+sh
+
+record = ('ACME', 50, 123.45, (12, 18, 2012))
+name, *_, (*_, year) = record
+
+name
+year
+
+```
+
+# Variable unpacking
+```{r}
+# install.packages("wrapr")
+library(wrapr)
+# packageVersion('wrapr')
+
+# install.packages('zeallot')
+library(zeallot)
+
+library(tidyverse)
+
+line <-  'nobody:*:-2:-2:Unprivileged User:/var/empty:/usr/bin/false'
+
+# vignette('unpacking-assignment')
+
+c(uname, ...rest, homedir, sh) %<-% unlist(str_split(line, pattern = ":"))
+
+uname
+homedir
+sh
+
+record <-  list('ACME', 50, 123.45, list(12, 18, 2012))
+
+c(name, ..._, c(..._, year)) %<-% record
+
+name
+year
+
+```
+

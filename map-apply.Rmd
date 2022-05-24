@@ -1,0 +1,171 @@
+---
+title: "map and apply"
+author: "Matt Rosinski"
+date: '2022-04-14'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{python}
+import pandas as pd
+
+df=pd.read_csv("./data/irs-income.csv")
+
+df.head()
+print(df.info)
+print(df.columns)
+# df=pd.read_csv('https://www.irs.gov/pub/irs-soi/16zpallagi.csv')
+
+# df.to_csv("data/irs-income.csv")
+
+
+```
+
+```{python}
+df=df.loc[(df['zipcode']!=0) & (df['zipcode']!=99999), #filter row
+          ['STATE','zipcode','agi_stub','N1']]         #select
+          
+df
+
+pd.set_option('display.max_columns', 0)
+pd.set_option('display.max_rows', 10)
+
+df.info()
+```
+
+#Jeff skipped the step to calculate the medians
+```{python}
+# Manual calculation example to show what we want
+medians = {1:12500,2:37500,3:62500,4:87500,5:112500,6:212500}
+print(type(medians))
+print(medians.keys())
+print(medians.values())
+
+medians_df = pd.DataFrame.from_dict(medians, orient='index').reset_index() 
+
+
+print(medians_df)
+df['agi_stub']=df.agi_stub.map(medians)  # iterate over the agi_stub column and map the index to the median income
+
+print(df.describe)
+```
+
+
+```{r}
+library(tidyverse)
+library(reticulate)
+
+df <- py$df
+medians <- py$medians_df
+medians %>% glimpse()
+
+df <-  df %>%
+    filter(!(zipcode == 0 | zipcode == 99999)) %>%
+    select(STATE, zipcode, agi_stub, N1)
+
+# {1:12500,2:37500,3:62500,4:87500,5:112500,6:212500}
+
+df %>% glimpse()
+
+df <- df %>%
+    left_join(medians, by = c("agi_stub" = "index")) %>%
+    mutate(agi_stub = `0`) %>%
+    select(-`0`)
+
+
+df %>% filter(zipcode == "90210")
+
+```
+
+# Code translated by OpenAI
+convert this Python code into R:
+
+import pandas as pd
+import pandas as pd
+df=pd.read_csv("./data/irs-income.csv")
+groups = df.groupby(by='zipcode')
+df = pd.DataFrame(groups.apply( 
+    lambda x:sum(x['N1']*x['agi_stub'])/sum(x['N1']))) \
+    .reset_index()
+
+```{r}
+library(tidyverse)
+# read the csv file
+df <- read.csv("data/irs-income.csv")
+
+# group the data by zipcode
+groups <- df.group_by(zipcode)
+
+# apply a function to the groups
+df <- data.frame(groups %>%
+    apply(lambda x:sum(x['N1']*x['agi_stub'])/sum(x['N1']))) %>%
+    reset_index()
+
+```
+
+```{python}
+groups = df.groupby(by='zipcode')
+
+print(list(groups)[0])
+
+df2 = pd.DataFrame(groups.apply( 
+    lambda x:sum(x['N1']*x['agi_stub'])/sum(x['N1']))) \
+    .reset_index()
+    
+df2.columns = ['zipcode','agi_estimate']
+  
+print(df2.head(10))
+
+print(type(df2))
+
+df2[ df2['zipcode']==90210 ].round(1)
+```
+
+
+```{r}
+# Very fast!
+df2 <- df %>%
+    group_by(zipcode) %>%
+    summarise(agi_estimate = sum(N1*agi_stub)/sum(N1))
+
+df2 %>% head()
+
+df2 %>% filter(zipcode == "90210")
+
+# This method is very slow!!
+result <- df %>%
+    group_by(zipcode) %>%
+    group_split() %>%
+    map_df(.f = function(df){
+        tibble(agi_estimate = sum(df$N1*df$agi_stub)/sum(df$N1)) %>%
+            add_column(zipcode = unique(df$zipcode), .before = 1)
+        }
+        )
+
+result %>% head()
+
+# Quicker
+result <- tibble(
+    zipcode = unique(df$zipcode %>% sort()),
+    agi_estimate = df %>%
+        group_by(zipcode) %>%
+        group_split() %>%
+        map_dbl(.f = function(df){
+            agi_estimate = sum(df$N1*df$agi_stub)/sum(df$N1) })
+    )
+
+result %>% head()
+
+str(result)
+
+result[[1]]
+
+
+    mutate()
+
+df2 %>% head(10)
+```
+

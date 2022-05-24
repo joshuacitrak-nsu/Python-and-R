@@ -1,0 +1,82 @@
+---
+title: "plotting in python and R"
+author: "Matt Rosinski"
+date: '2022-04-10'
+output: html_document
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Plot with Matplotlib
+```{python}
+# Import matplotlib.pyplot with alias plt
+import pandas as pd
+import matplotlib.pyplot as plt
+
+avocados = pd.read_pickle("https://bit.ly/sales-trend-data")
+
+# Look at the first few rows of data
+print(avocados.head())
+
+# Get the total number of avocados sold of each size
+nb_sold_by_size = avocados.groupby("size")["nb_sold"].sum()
+
+# Create a bar plot of the number of avocados sold by size
+nb_sold_by_size.plot(kind="bar")
+
+# Show the plot
+plt.show()
+```
+
+
+```{python}
+import pandas as pd
+import matplotlib.pyplot as plt
+
+avocados = pd.read_pickle("https://bit.ly/sales-trend-data")
+
+avocados['date'] = pd.to_datetime(avocados['date'], format = "%Y-%m-%d")
+
+plt.close()
+
+nb_sold_by_date = avocados.groupby('date')['nb_sold'].sum()
+
+nb_sold_by_date.plot(x='date',y = 'nb_sold', kind = 'line', color = '0')
+
+plt.title('Avocado Sales over Time')
+plt.xlabel('Date')
+plt.ylabel('Number sold')
+
+plt.tight_layout()
+
+plt.show()
+
+```
+
+```{r}
+library(tidyverse)
+library(reticulate)
+library(lubridate)
+
+avocados <- py$avocados
+
+nb_sold_by_date <-  avocados %>%
+    mutate(date = ymd_hms(date)) %>%
+    group_by(date) %>%
+    summarise(nb_sold = sum(nb_sold))
+
+nb_sold_by_date %>%
+    ggplot(aes((date), nb_sold)) +
+    geom_line() +
+    labs(
+        title = "Avocado Sales Trend",
+        x = "Date",
+        y = "Number sold"
+    ) +
+    theme_minimal()
+```
+

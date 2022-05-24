@@ -1,0 +1,208 @@
+---
+title: "simulating-data"
+author: "Matt Rosinski"
+date: '2022-05-10'
+output: html_document
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{python}
+import matplotlib.pyplot as plt
+import numpy as np
+
+plt.rc('figure', dpi=90)
+plt.close()
+
+def plot_function(f, title=None, min=-2.1, max=2.1, color='r', ylim=None):
+    x = np.linspace(min,max, 100)
+    if ylim: plt.ylim(ylim)
+    plt.plot(x, f(x), color)
+    if title is not None: plt.title(title)
+    plt.show()
+
+def f(x): return 3*x**2 + 2*x + 1
+
+plot_function(f, "$3x^2 + 2x + 1$")
+
+```
+
+```{r}
+library(ggplot2)
+library(latex2exp)
+theme_set(theme_minimal())
+
+plot_function <- function(f, title=NULL, min=-2.1, max=2.1, colour = "red") {
+    x <- seq(min,max,length.out = 100) 
+    ggplot() + 
+      xlim(min, max) + 
+      geom_function(fun = f, colour = colour, size = 0.8) +
+      {if(!is.null(title)) labs(title = TeX(title)) } +
+      {if(!is.null(title)) theme(plot.title = element_text(hjust = 0.5))}
+}
+
+f <- function(x) 3*x^2 + 2*x + 1
+
+plot_function(f, title = "$3x^2 + 2x + 1$")
+
+```
+
+```{r}
+
+
+plot(x, f(x), type = "l", color = "red")
+```
+
+# Define a generic quadratic equation
+```{python}
+from functools import partial
+
+def quad(a, b, c, x): return a*x**2 + b*x + c
+
+# Define a quadratic function generator
+def mk_quad(a, b, c): return partial(quad, a, b, c)
+
+# Specify parameters
+f = mk_quad(3, 2, 1)
+quad(3,2,1,1.5)
+f(1.5)
+
+plot_function(f)
+```
+
+```{r}
+library(purrr)
+
+quad <- function(a,b,c,x) {a*x^2 + b*x + c}
+
+quad(a = 3, b = 2, c = 1)
+
+mk_quad <- function(a, b, c) {partial(.f = quad, a = a, b = b, c = c)}
+
+f <- mk_quad(3, 2, 1)
+
+quad(3,2,1,1.5)
+f(1.5)
+
+plot_function(f)
+```
+
+
+```{python}
+# draw 1000 samples from the normal distribution 
+# s = normal(mu, sigma, 1000)
+# s[0:10]
+# abs(mu - np.mean(s))
+
+# abs(sigma - np.std(s, ddof=1))
+# plt.close()
+# count, bins, ignored = plt.hist(s, 30, density = True)
+# plt.plot(bins, 1/(sigma * np.sqrt(2 * np.pi)) *
+#                np.exp( - (bins - mu)**2 / (2 * sigma**2) ),
+#          linewidth=2, color='r')
+plt.close()
+```
+
+# Generate random noise on the points along a defined function
+```{python}
+from numpy.random import normal, seed, uniform
+
+np.random.seed(42)
+
+mu = 0
+sigma = 0.1
+
+def noise(x, scale): return normal(scale = scale, size = x.shape)
+def add_noise(x, mult, add): return x * (1 + noise(x, mult)) + noise(x, add)
+
+x = np.linspace(-2, 2, 20)
+y = add_noise(f(x), 0.3, 1.5)
+plt.scatter(x, y, color='b')
+plot_function(f)
+
+```
+
+```{r}
+s <- rnorm(1000, mean = mu, sd = sigma)
+hist(s, breaks = 30)
+```
+
+```{r}
+library(tibble)
+library(ggplot2)
+
+set.seed(42)
+mu <- 0
+sigma <- 0.1
+
+noise <- function(x, scale) {rnorm(n = length(x), mean = 0, sd = scale)}
+add_noise <- function(x, mult, add) { x * (1 + noise(x, mult)) + noise(x, add)}
+
+x <- seq(-2, 2, length.out = 20)
+y <- add_noise(f(x), 0.3, 1.5)
+
+tibble(x=x, y=y) %>%
+    ggplot(aes(x,y)) +
+    geom_point(colour = "dodger blue ", size = 3) +
+    geom_function(fun = f, colour = 'red', size = 0.8)
+
+```
+
+# Reconstruct the original function by fitting a model to the noisy data
+```{python}
+# Mean squared error
+def mse(preds, acts): return ((preds-acts)**2).mean()
+def mae(preds, acts): return (torch.abs(preds-acts)).mean()
+
+@interact(a=1.5, b=1.5, c=1.5)
+def plot_quad(a, b, c):
+    f = mk_quad(a,b,c)
+    plt.scatter(x, y)
+    loss = mse(f(x), y)
+    plot_function(f, ylim=(-3,12), title=f"MSE: {loss:.2f}")
+    
+plt.close()
+plot_quad(a=1.5, b=1.5, c=1.5)
+
+```
+
+```{r}
+mse <- function(preds, acts) {mean((preds-acts)**2)}
+mae <- function(preds, acts) {mean(abs(preds-acts))}
+
+f(1.5)
+x
+y
+a = 3
+b = 2
+c = 1
+plot_quad <- function(a,b,c, min=-2.1, max=2.1) {
+    f = mk_quad(a,b,c)      # predictions
+    loss =  mse(f(x), y)    # loss between predictions and noisy data
+    tibble(x, y) %>%
+    ggplot(aes(x, y)) + 
+        geom_point(colour = "dodger blue", size = 2) +
+        geom_function(fun = f, colour = "red", size = 0.8) +
+        labs(title = str_glue("MSE: {round(loss,2)}")) +
+        theme(plot.title = element_text(hjust = 0.5))
+}
+
+plot_quad(3,2, 1)
+```
+
+# Calculate the loss for any set of parameters (not just a quadratic)
+```{python}
+def quad_mse(params):
+    f = mk_quad(*params)
+    return mse(f(x), y)
+
+quad_mse([1.5, 1.5, 1.5])
+
+
+
+```
+
