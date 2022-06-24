@@ -1,0 +1,74 @@
+---
+title: "groupby"
+author: "Matt Rosinski"
+date: '2022-06-22'
+output: html_document
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+# Import and prepare the data
+# Source of data: https://www.kaggle.com/datasets/doaaalsenani/usa-cers-dataset
+
+uscars <- read_csv("data/USA_cars_datasets.csv")
+
+ref_data <- uscars %>%
+    filter(year >= 2014 & year < 2020) %>%
+    filter(brand %in% c("chevrolet", "ford", "dodge", "nissan")) %>%
+    mutate(year = as_factor(year))
+    
+```
+
+
+```{r}
+library(tidyquant)
+library(reticulate)
+
+# Count the number of distinct models for second hand sale in Kaggle dataset
+ref_data %>% 
+    group_by(brand, year) %>%
+    distinct(model) %>%
+    summarise(count = n()) %>% 
+    # mutate(year = as_factor(year)) %>%
+    ggplot(aes(brand, count, fill = year)) +
+    geom_bar(stat = "identity", position = "dodge") +
+    labs(fill = "") +
+    theme_tq() +
+    tidyquant::scale_fill_tq()
+```
+
+```{python}
+import pandas as pd
+import matplotlib.pyplot as plt
+
+ref_data = r.ref_data
+ref_data['year'] = ref_data['year'].astype(int)
+
+(ref_data.groupby(['brand','year'])
+    .model
+    .nunique()
+    .unstack()
+    .loc[['chevrolet', 'dodge', 'ford', 'nissan'], [2014, 2015, 2016, 2017, 2018, 2019]]
+    .plot.bar(width=0.7)
+    )
+
+plt.xticks(rotation=0)
+plt.legend(ncol=3, bbox_to_anchor =(0.5,-0.5), loc='lower center')
+plt.gcf().subplots_adjust(bottom=0.3)
+
+plt.show()
+
+```
+
+```{r}
+ref_data %>% 
+    group_by(year, brand) %>%
+    distinct(model)
+```
+

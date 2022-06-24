@@ -1,0 +1,95 @@
+---
+title: "feature-engineering-titanic"
+author: "Matt Rosinski"
+date: '2022-05-28'
+output: html_document
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{python}
+from pathlib import Path
+import os
+
+
+```
+
+```{python}
+creds = '{"username":"mattrosinski","key":"854b2b30867c7f2bec7df48f5775021e"}'
+
+cred_path = Path('~/.kaggle/kaggle.json').expanduser()
+if not cred_path.exists():
+    cred_path.parent.mkdir(exist_ok=True)
+    cred_path.write_text(creds)
+    cred_path.chmod(0o600)
+```
+
+```{python}
+cred_path
+```
+
+```{python}
+import zipfile,kaggle
+path = Path('titanic')
+kaggle.api.competition_download_cli(str(path))
+zipfile.ZipFile(f'{path}.zip').extractall(path)
+```
+
+```{python}
+import pandas as pd
+df = pd.read_csv(path/'train.csv')
+```
+
+```{python}
+
+df['Name'][0]
+df['Name'].str.split(', ', expand=True)[1].str.split('.', expand=True)[0][0]
+
+```
+
+```{r}
+library(reticulate)
+library(rebus)
+my_df <- py$df
+```
+
+# How would you extract the title feature from this string
+```{python}
+[print(df['Title'][i], end = ' ') for i in range(5)]
+```
+
+# The Titanic Kaggle dataset contains passenger name fields
+# Our goal is to extract the title
+```{python}
+import pandas as pd
+# Extract the title from the Name column
+df['Name'][0:5]
+df['Title'] = df['Name'].str.split(', ', expand=True)[1]. \
+                         str.split('.', expand=True)[0]
+print(df['Title'][0:5])
+
+```
+
+```{r}
+library(tidyverse, rebus)
+my_df$Name[1:5]
+my_df %>%
+    separate(Name, into = c("Surname", "Second"), sep =", ") %>%
+    separate(Second, into = c("Title", "Remainder"), 
+             sep=rebus::DOT, extra = 'drop', remove = TRUE) %>% 
+    slice_head(n = 5) %>%
+    pull(Title)
+```
+
+1+6
+2+5
+3+4
+4+3
+5+2
+6+1
+
+6/36 = 1/6

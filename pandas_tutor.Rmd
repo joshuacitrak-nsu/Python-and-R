@@ -1,0 +1,71 @@
+---
+title: "pandas and tidyr"
+author: "Matt Rosinski"
+date: '2022-06-13'
+output: html_document
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+```{r}
+library(palmerpenguins)
+library(tidyverse)
+library(reticulate)
+library(kableExtra)
+
+
+df <- penguins
+
+penguins <- df %>%
+    group_by(species, sex) %>%
+    filter(!is.na(sex)) %>%
+    summarise(bill_length_mm    = round(mean(bill_length_mm), 2),
+              bill_depth_mm     = round(mean(bill_depth_mm), 2),
+              flipper_length_mm = round(mean(flipper_length_mm), 2))
+
+df <-  penguins %>% pivot_wider(names_from = sex, values_from = contains("mm"))
+
+kable(df, format = "html", table.attr = "style='width:20%;'")
+
+kable(df, format = "html", table.attr = "style='width:30%;'") %>% 
+  kableExtra::kable_styling()
+```
+
+
+```{r}
+library(palmerpenguins)
+library(tidyverse)
+library(reticulate)
+
+df <- penguins
+
+penguins <- df %>%
+    group_by(species, sex) %>%
+    filter(!is.na(sex)) %>%
+    summarise(bill_length_mm    = round(mean(bill_length_mm), 2),
+              bill_depth_mm     = round(mean(bill_depth_mm), 2),
+              flipper_length_mm = round(mean(flipper_length_mm), 2))
+
+penguins %>% pivot_wider(names_from = sex, values_from = contains("mm"))
+
+```
+
+```{python}
+import pandas as pd
+pd.options.display.float_format = '{:,.2f}'.format
+df = pd.DataFrame(r.penguins)
+
+penguins = (df.groupby(['species', 'sex'])
+            [['bill_length_mm', 'bill_depth_mm', 'flipper_length_mm']]
+            .mean()
+            .reset_index())
+
+penguins.pivot(index='species', columns = 'sex')
+
+```
+
