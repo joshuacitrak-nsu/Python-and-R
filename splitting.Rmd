@@ -1,0 +1,42 @@
+---
+title: "splitting"
+author: "Matt Rosinski"
+date: '2022-07-03'
+output: html_document
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Convert a range string into the average
+```{python}
+import pandas as pd
+
+age = pd.Series(['0-10', '11-15', '11-15', '61-65', '46-50'])
+
+(age
+    .str
+    .split('-', expand = True)
+    .astype(int)
+    .mean(axis = 'columns'))
+
+```
+
+```{r}
+library(tidyverse)
+library(reticulate)
+
+age = py$age 
+
+tibble(age) %>%
+    separate(col = age, sep =  '-', 
+             into = c('start', 'end'), 
+             convert = TRUE) %>%
+    rowwise() %>%
+    mutate(mean = mean(start:end)) %>% 
+    select(mean)
+
+```
