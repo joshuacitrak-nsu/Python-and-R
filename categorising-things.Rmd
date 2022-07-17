@@ -1,0 +1,79 @@
+---
+title: "categorise-things"
+author: "Matt Rosinski"
+date: "2022-07-17"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+harry_potter <- read_csv("https://raw.githubusercontent.com/LFOD/real-blog/master/static/data/harry-potter.csv")
+
+```
+
+# Source: https://livefreeordichotomize.com/2020/05/16/this-one-cool-hack/
+# Lucy D'Agostino McGowan
+
+# Tired
+```{r}
+harry_potter %>%
+  mutate(
+    smart_rank = case_when(
+      House == "Ravenclaw" ~ 1,
+      House == "Gryffindor" ~ 2,
+      House == "Slytherin" ~ 3,
+      House == "Hufflepuff" ~ 4
+    ),
+    brave_rank = case_when(
+      House == "Gryffindor" ~ 1,
+      House == "Slytherin" ~ 2,
+      House == "Ravenclaw" ~ 3,
+      House == "Hufflepuff" ~ 4
+    ),
+    cunning_rank = case_when(
+      House == "Slytherin" ~ 1,
+      House == "Ravenclaw" ~ 2,
+      House == "Gryffindor" ~ 3,
+      House == "Hufflepuff" ~ 4
+    ),
+    kind_rank = case_when(
+      House == "Hufflepuff" ~ 1,
+      House == "Gryffindor" ~ 2,
+      House == "Ravenclaw" ~ 3,
+      House == "Slytherin" ~ 4
+    )
+  )
+```
+
+# Join with tibble - Wired
+```{r}
+ranks <- tibble(
+  House = c("Gryffindor", "Ravenclaw", "Hufflepuff", "Slytherin"),
+  smart_rank = c(2, 1, 4, 3),
+  brave_rank = c(1, 3, 4, 2),
+  cunning_rank = c(3, 2, 4, 1),
+  kind_rank = c(2, 3, 1, 4)
+)
+
+harry_potter %>%
+  left_join(ranks, by = "House")
+```
+
+# Join with tribble: Inspired
+```{r}
+ranks <- tribble(
+  ~House,      ~smart_rank, ~brave_rank, ~cunning_rank, ~kind_rank,
+  "Gryffindor", 2,           1,          3,             2,
+  "Ravenclaw",  1,           3,          3,             3,
+  "Hufflepuff", 4,           4,          4,             1,
+  "Slytherin",  3,           2,          1,             4,
+)
+
+harry_potter %>%
+  left_join(ranks, by = "House") 
+```
+
