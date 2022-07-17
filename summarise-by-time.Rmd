@@ -1,0 +1,60 @@
+---
+title: "summarise-by-time"
+author: "Matt Rosinski"
+date: "2022-07-16"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Summarise snow grouping by the start of each month
+```{python}
+import pandas as pd
+url = 'https://raw.githubusercontent.com/mattharrison/datasets/' +\
+    'master/data/alta-noaa-1980-2019.csv'
+    
+alta_df = pd.read_csv(url)
+    
+dates = pd.to_datetime(alta_df.DATE)
+
+snow = (alta_df
+        .SNOW
+        .rename(dates))
+
+max_snow = (snow
+ .resample('MS')
+ .max())
+
+mean_snow = (snow
+ .resample('MS')
+ .mean())
+ 
+ frame = {'max_snow': max_snow, 'mean_snow': mean_snow}
+pd.DataFrame(frame)
+.inde
+.head(10)
+```
+
+
+```{r}
+library(lubridate)
+library(timetk)
+library(tidyverse)
+library(lubridate)
+library(reticulate)
+
+alta_df <- py$alta_df %>%
+    select(DATE, SNOW) %>%
+    mutate(DATE = ymd(DATE)) 
+
+alta_df %>%
+    summarise_by_time(.date_var = DATE,
+                      .by = "month", .type = "floor",
+                      max_snow = max(SNOW, na.rm = TRUE),
+                      mean_snow = mean(SNOW, na.rm = TRUE)
+                      )
+
+
+```

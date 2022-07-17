@@ -1,0 +1,55 @@
+---
+title: "top5-categories"
+author: "Matt Rosinski"
+date: '2022-06-26'
+output: html_document
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Import data
+```{python}
+import pandas as pd
+
+df = pd.read_csv('https://www.fueleconomy.gov/feg/epadata/vehicles.csv.zip')
+```
+
+```{python}
+df = pd.read_csv('https://www.fueleconomy.gov/feg/epadata/vehicles.csv.zip')
+make = df.make
+top5 = make.value_counts().index[:5]
+
+
+```
+
+# Summarise average city mileage by top 5 makes
+```{python}
+# Create and substitute modified series
+make = df.make
+top5 = make.value_counts().index[:5]
+make = make.where(make.isin(top5), other = "Other")
+df.make = make
+# Summarise and group with modified series
+(df
+ .groupby(make)
+ .city08
+ .mean())
+```
+
+
+```{r}
+library(tidyverse)
+library(reticulate)
+
+df <- py$df
+
+df %>%
+    mutate(make = fct_lump(make, n = 5)) %>%
+    group_by(make) %>%
+    summarise(city_mpg = mean(city08))
+```
+

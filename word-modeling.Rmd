@@ -1,0 +1,146 @@
+---
+title: "separating things"
+author: "Matt Rosinski"
+date: "2022-07-17"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Reference: https://juliasilge.com/blog/pay-gap-uk/
+# Julia Silge
+```{r}
+library(tidyverse)
+
+paygap_raw <- read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-06-28/paygap.csv')
+
+paygap_raw %>% 
+  select(sic_codes) %>% 
+  separate_rows(sic_codes, sep = ":") %>% 
+  count(sic_codes, sort = TRUE)
+```
+
+```{r}
+paygap_raw %>%
+  ggplot(aes(diff_median_hourly_percent / 100)) +
+  geom_histogram(bins = 25) +
+  scale_x_continuous(limits = c(-0.5, 0.5))
+```
+
+```{r}
+# https://www.gov.uk/government/publications/standard-industrial-classification-of-economic-activities-sic
+
+url_path <- "https://assets.publishing.service.gov.uk/government/uploads/system/uploads/attachment_data/file/527619/SIC07_CH_condensed_list_en.csv"
+
+uk_sic_codes <- 
+  read_csv(url_path) %>% 
+  janitor::clean_names()
+
+write_csv(uk_sic_codes, "data/SIC07_CH_condensed_list_en.csv")
+
+uk_sic_codes
+```
+
+
+```{r}
+paygap_joined <-
+  paygap_raw %>%
+  select(employer_name, diff_median_hourly_percent, sic_codes) %>%
+  separate_rows(sic_codes, sep = ":") %>%
+  left_join(uk_sic_codes, by = c("sic_codes" = "sic_code"))
+
+paygap_joined
+```
+
+# Treat codes as text
+```{r}
+library(tidytext)
+
+paygap_tokenized <-
+  paygap_joined %>%
+  unnest_tokens(word, description) %>%
+  anti_join(get_stopwords()) %>%
+  na.omit()
+
+paygap_tokenized
+```
+
+# Focus on most common words
+```{r}
+top_words <- 
+  paygap_tokenized %>%
+  count(word) %>%
+  filter(!word %in% c("activities", "n.e.c", "general", "non")) %>%
+  slice_max(n, n = 40) %>%
+  pull(word)
+
+paygap <-
+    paygap_tokenized %>%
+    filter(word %in% top_words) %>%
+    transmute(
+        diff_wage = diff_median_hourly_percent / 100, 
+        word
+    )
+
+paygap
+```
+
+```{r}
+theme_set(theme_minimal())
+
+paygap %>% 
+    group_by(word) %>%
+    summarise(diff_wage = mean(diff_wage)) %>%
+    mutate(word = fct_reorder(word, diff_wage)) %>%
+    ggplot(aes(diff_wage, word)) +
+    geom_point(alpha = 0.9, size = 2, color = "midnightblue") +
+    labs(x = "% increase in men's hourly wages compared to women's", y = NULL)
+```
+
+# Fit a linear model
+```{r}
+paygap_fit <- lm(diff_wage ~ 0 + word, data = paygap)
+summary(paygap_fit)
+```
+
+```{r}
+library(dotwhisker)
+
+tidy(paygap_fit) %>%
+    mutate(
+        term = str_remove(term, "word"),
+        term = fct_reorder(term, -estimate)
+    ) %>%
+    dwplot(vars_order = levels(.$term),
+           dot_args = list(size = 2, color = "midnightblue"),
+           whisker_args = list(color = "midnightblue")) +
+    scale_x_continuous(labels = scales::percent) +
+    labs(x = "% increase in men's hourly wages compared to women's", y = NULL)
+```
+
+# Fit many models
+```{r}
+library(rsample)
+
+paygap_intervals <- 
+    reg_intervals(diff_wage ~ 0 + word, data = paygap)
+
+paygap_intervals
+```
+
+# Visualise
+```{r}
+paygap_intervals %>%
+    mutate(
+        term = str_remove(term, "word"),
+        term = fct_reorder(term, .estimate)
+    ) %>%
+    ggplot(aes(.estimate, term)) +
+    geom_crossbar(aes(xmin = .lower, xmax = .upper),
+                  color = "midnightblue", alpha = 0.8) +
+    scale_x_continuous(labels = scales::percent) +
+    labs(x = "% increase in men's hourly wages compared to women's", y = NULL)
+```
+
