@@ -1,0 +1,135 @@
+---
+title: "extract-numbers"
+author: "Matt Rosinski"
+date: "2022-07-08"
+output: html_document
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{python}
+import pandas as pd
+
+s = pd.Series(['3some text 5 that1', 'has some 4 numbers1 stuck 0', '3 inside 2 it '])
+
+
+(s.str
+    .extractall(pat=r'(\d+)')
+    .unstack(fill_value='')
+    .astype(str)
+    .sum(axis=1)
+    .astype(int)
+    )
+```
+
+```{r}
+library(tidyverse)
+library(reticulate)
+library(tidyr)
+library(rebus)
+
+s <- py$s %>% as_tibble()
+
+# s %>%
+#     mutate(numbers = extract_numeric(value)) %>%
+#     pull(numbers)
+
+s %>%
+    mutate(numbers = str_remove_all(value, pattern = "\\D+") %>% as.integer())
+
+```
+
+
+```{r}
+alpha_pat <- rebus::zero_or_more(ALPHA) %R% rebus::zero_or_more(SPACE)
+
+py$s %>% str_view_all(alpha_pat)
+
+# Use caps for negation
+# Any whitespace character
+str_view_all(py$s, pattern = "\\s")
+
+# Any non-whitespace character
+str_view_all(py$s, pattern = "\\S+")
+
+# Any digit
+str_view_all(py$s, pattern = "\\d+")
+
+# Any non-digit
+str_view_all(py$s, pattern = "\\D+")
+
+rebus::one_or_more("eio")
+
+# any single character of o, e or i
+str_view_all(py$s, pattern = "[oie]+")
+
+
+str_view_all(py$s, pattern = "[:print:]")
+
+# Any word character
+str_view_all(py$s, pattern = "\\w+")
+
+# Any non-word character
+str_view_all(py$s, pattern = "\\W+")
+
+# Any unicode sequences, linebreaks included
+str_view_all(py$s, pattern = "\\X+")
+
+# Match one data unit
+str_view_all(py$s, pattern = "\\C+")
+
+# Match any Unicode newline character
+str_view_all(py$s, pattern = "(\\R)")
+
+
+
+
+# End of word
+str_view_all(py$s, pattern = regex("\\b(?<=\\w)"))
+
+str_view_all(py$s, pattern = "\\b(?<=\\w)")
+
+# Any single character
+str_view_all(py$s, pattern = ".+")
+
+
+
+
+
+
+
+rebus::UP_WHITE_SPACE
+
+
+s %>%
+    mutate(numbers = str_remove_all(value, pattern = "\\D+") %>% as.integer())
+
+
+```
+
+```{r}
+# Stack Overflow question 
+# https://stackoverflow.com/questions/39698398/how-do-i-retrieve-all-numbers-in-a-string-and-combine-them-into-one-number-using/72919049#72919049
+
+mynumbers <- py$s %>% str_extract_all("[0-9]")
+
+as.numeric(gsub("\\D+", "", py$s))
+
+str_remove_all(py$s, pattern = "\\D+") %>% as.numeric()
+
+s %>%
+    mutate(numbers = as.numeric(gsub("\\D+", "", value)))
+
+input <- "<77Â 500 miles</dd>"
+
+str_remove_all(input, pattern = "\\D+") %>% as.numeric()
+
+py$s %>% 
+    str_remove_all(pattern = alpha_pat) %>%
+    as.numeric()
+```
+
