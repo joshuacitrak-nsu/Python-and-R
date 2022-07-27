@@ -3,6 +3,8 @@ title: "summarise-by-time"
 author: "Matt Rosinski"
 date: "2022-07-16"
 output: html_document
+editor_options: 
+  chunk_output_type: inline
 ---
 
 ```{r setup, include=FALSE}
@@ -12,8 +14,7 @@ knitr::opts_chunk$set(echo = TRUE)
 # Summarise snow grouping by the start of each month
 ```{python}
 import pandas as pd
-url = 'https://raw.githubusercontent.com/mattharrison/datasets/' +\
-    'master/data/alta-noaa-1980-2019.csv'
+url = 'https://bit.ly/snowfall-data'
     
 alta_df = pd.read_csv(url)
     
@@ -31,10 +32,9 @@ mean_snow = (snow
  .resample('MS')
  .mean())
  
- frame = {'max_snow': max_snow, 'mean_snow': mean_snow}
+frame = {'max_snow': max_snow, 'mean_snow': mean_snow}
 pd.DataFrame(frame)
-.inde
-.head(10)
+
 ```
 
 
