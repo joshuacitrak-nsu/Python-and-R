@@ -37,6 +37,19 @@ pd.DataFrame(frame)
 
 ```
 
+```{python}
+(snow
+    .resample('MS')
+    .mean())
+
+```
+
+
+
+
+
+
+
 
 ```{r}
 library(lubridate)
@@ -58,3 +71,15 @@ alta_df %>%
 
 
 ```
+
+
+
+```{r}
+
+
+
+
+
+
+```
+
