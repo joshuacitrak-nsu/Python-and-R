@@ -11,28 +11,14 @@ editor_options:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{python}
-# url = 'https://raw.githubusercontent.com/mattharrison/datasets/' +\
-#     'master/data/alta-noaa-1980-2019.csv'
-```
-
-
-```{python}
-
-rolling_mean = (snow
-.rolling(5)
-.mean())
-
-```
-
-
 # Create a dataframe with rolling average snowfall over the last 5 days
 ```{python}
 import pandas as pd
-
-url = 'https://bit.ly/snowfall-data'
+# url = 'https://raw.githubusercontent.com/mattharrison/datasets/' +\
+#     'master/data/alta-noaa-1980-2019.csv'
+    
 alta_df = pd.read_csv(url)
-
+    
 dates = pd.to_datetime(alta_df.DATE)
 
 snow = (alta_df
@@ -48,7 +34,7 @@ frame = {'snow': snow, 'rolling_mean': rolling_mean}
 pd.DataFrame(frame).head(10)
 ```
 ```{r}
-url <-  'https://bit.ly/snowfall-data'
+url <-  'https://raw.githubusercontent.com/mattharrison/datasets/master/data/alta-noaa-1980-2019.csv'
 alta_df <- read_csv(url)
 ```
 
@@ -56,18 +42,15 @@ alta_df <- read_csv(url)
 library(timetk)
 library(tidyverse)
 library(reticulate)
-library(lubridate)
 
 alta_df <- py$alta_df
 
 alta_df %>%
-  select(DATE, SNOW) %>%
-  mutate(
-    DATE = ymd(DATE),
-    rolling_mean = slidify_vec(.x = SNOW, 
-                         .f = ~ mean(.x, na.rm = TRUE), 
-                         .period = 5, 
-                         .align = 'right'))
+    select(DATE, SNOW) %>%
+    mutate(rolling_mean = slidify_vec(.x = SNOW, 
+                           .f = ~ mean(.x, na.rm = TRUE), 
+                           .period = 5, 
+                           .align = 'right'))
 
 ```
 
