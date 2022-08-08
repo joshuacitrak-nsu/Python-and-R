@@ -1,0 +1,126 @@
+---
+title: "assign-plot"
+author: "Matt Rosinski"
+date: "2022-08-01"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{python}
+import matplotlib.pyplot as plt
+import modin.pandas as pd
+```
+
+```{python}
+# import pandas as pd
+
+url = 'https://bit.ly/snowfall-data'
+alta_df = pd.read_csv(url)
+
+dates = pd.to_datetime(alta_df.DATE)
+```
+
+```{python}
+alta_df.head()
+
+```
+
+```{python}
+def tweak_alta(df):
+    return (df
+            .loc[:, ['STATION', 'NAME', 'LATITUDE', 'LONGITUDE', 'ELEVATION',
+            'DATE', 'PRCP', 'SNOW', 'SNWD', 'TMAX', 'TMIN', 'TOBS']]
+            )
+
+```
+
+
+```{python}
+def monthly_summary(df):
+    def get_location(df_):
+        return (df_
+                .assign(LOCATION='Alta')
+                .LOCATION
+                .where(df_.DATE.dt.year >= 2000, 'Alta Ski Resort')
+                )
+                
+    def get_season(df_):
+        return (df_
+                .assign(SEASON='Ski')
+                .SEASON
+                .where((df_.DATE.dt.month <= 4) | (df_.DATE.dt.month >= 11), 'Summer')
+                .add(' ')
+                .add(df_
+                    .DATE.dt.year.astype(str)
+                    .where(df_.DATE.dt.month > 4, (df_.DATE.dt.year - 1).astype(str))))
+    
+    my_cols = ['STATION', 'NAME', 'LATITUDE', 'LONGITUDE', 'ELEVATION','DATE', 
+              'PRCP', 'SNOW', 'SNWD', 'TMAX', 'TMIN', 'TOBS']
+    
+    return (df
+            [my_cols]
+            .groupby(pd.Grouper(key='DATE', freq = 'W'))
+            .agg({'PRCP': 'sum', 'TMUX': 'max', 'TMIN': 'min', 'SNOW': 'sum', 'SNWD': 'mean'})
+            .reset_index()
+            .assign(T_RANGE=lambda df_: df_.TMAX - df_.TMIN,
+                    LOCATION=get_location,
+                    SEASON=get_season
+                    )
+            )
+
+```
+
+
+```{python}
+def plot_season(df, year, fig, ax):
+    blue = '#99ddee'
+    white = '#fff'
+    data = (df
+        .query(f'SEASON=="Ski {year}"')
+    )
+    for side in 'top,right,bottom,left'.split(','):
+        ax.spines[side].set_visible(False)
+    ax.tick_params(axis='both', colors=white)
+    ax.tick_params(axis='both', colors=white)
+    ax.tick_params(axis='x', which='minor', colors='white')
+    ax.fill_between(data.DATE, data.SNWD, color='white')
+    ax.set_facecolor(blue)
+    ax.set_ylim(0, 150)
+    ax.set_title(f'{year} Season Snowfall', fontsize=16, color=white)
+
+
+```
+
+
+```{python}
+def facet_plot(df, years):
+    blue = '#99ddee'
+    white = '#fff'
+    fig, axs = plt.subplots(ncols=2, nrows=(len(years)//2),
+                            figsize=(16, 10), facecolor=blue)
+    axs = axs.flatten()|
+    for i, year in enumerate(years):
+        plot_season(df, year, fig, axs[i])
+    fig.suptitle('Alta Snowfall (@machinatoonist)', fontsize=20, color=white)
+    fig.tight_layout()
+    return fig
+
+
+```
+
+
+```{python}
+_ = (alta_df
+     .pipe(tweak_alta)
+     .pipe(monthly_summary)
+     # .pipe(facet_plot, years=['2000', '2005', '2010', '2015'])
+)
+                    
+
+
+```
+

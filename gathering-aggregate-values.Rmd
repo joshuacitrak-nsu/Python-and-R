@@ -15,9 +15,8 @@ knitr::opts_chunk$set(echo = TRUE)
 # Gathering aggregate values (but keeping the initial index)
 ```{python}
 import pandas as pd
-url = 'https://raw.githubusercontent.com/mattharrison/datasets/' +\
-    'master/data/alta-noaa-1980-2019.csv'
-    
+url = 'https://bit.ly/snowfall-data'
+
 alta_df = pd.read_csv(url)
     
 dates = pd.to_datetime(alta_df.DATE)
@@ -37,9 +36,58 @@ snow = (alta_df
 
 ```
 
+```{python}
+
+(snow
+  .div(snow
+      .resample('MS')
+      .transform('sum'))
+  .mul(100)
+  .fillna(0)
+  .head(15))
+
+
+
+
+```
+
+
+
+
+
+
+
+
+
+
+```{python}
+(snow
+  .resample('MS')
+  .transform('sum'))
+```
+ 
+```{python}
+pd.set_option('display.max_columns', 8)
+# pd.set_option('display.width', None)
+alta_df.head()
+
+
+```
+```{r}
+py_list_packages() %>%
+  filter(str_detect(string = package, pattern = "torch"))
+```
+ 
+```{r}
+alta_df %>%
+  group_by(year = year(DATE), month = month(DATE)) %>%
+  summarise(pct_snow = SNOW/sum(SNOW, na.rm = TRUE)*100) %>%
+  ungroup() %>%
+  select(pct_snow)
+```
+ 
 
 ```{r}
-
 library(timetk)
 library(tidyverse)
 library(lubridate)
@@ -50,9 +98,16 @@ alta_df <- py$alta_df %>%
     mutate(DATE = ymd(DATE))
 
 alta_df %>%
-    group_by(year = year(DATE), month = month(DATE)) %>%
-    summarise(pct_snow = SNOW/sum(SNOW, na.rm = TRUE)*100)
-
+  select(DATE) %>%
+  dplyr::bind_cols(
+  summarise_by_time(
+    .data = alta_df,
+    .date_var = DATE, 
+    .by = "month", 
+    pct = 100*SNOW/sum(SNOW, na.rm = FALSE)) %>%
+    ungroup() %>%
+    select(pct)) %>%
+  fill(pct, 0)
 
 ```
 

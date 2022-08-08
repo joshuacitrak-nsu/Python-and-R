@@ -1,0 +1,58 @@
+---
+title: "gathering-aggregate-values"
+author: "Matt Rosinski"
+date: "2022-07-16"
+output: html_document
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Find the percentage of monthly snow that fell on each day
+# Gathering aggregate values (but keeping the initial index)
+```{python}
+import pandas as pd
+url = 'https://raw.githubusercontent.com/mattharrison/datasets/' +\
+    'master/data/alta-noaa-1980-2019.csv'
+    
+alta_df = pd.read_csv(url)
+    
+dates = pd.to_datetime(alta_df.DATE)
+
+snow = (alta_df
+        .SNOW
+        .rename(dates))
+        
+(snow
+    .div(snow
+        .resample('MS')
+        .transform('sum'))
+    .mul(100)
+    .fillna(0)
+    .head(20)
+)
+
+```
+
+
+```{r}
+
+library(timetk)
+library(tidyverse)
+library(lubridate)
+library(reticulate)
+
+alta_df <- py$alta_df %>%
+    select(DATE, SNOW) %>%
+    mutate(DATE = ymd(DATE))
+
+alta_df %>%
+    group_by(year = year(DATE), month = month(DATE)) %>%
+    summarise(pct_snow = SNOW/sum(SNOW, na.rm = TRUE)*100, .groups = "drop")
+
+
+```
+
