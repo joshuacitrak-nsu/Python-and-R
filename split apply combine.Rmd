@@ -1,0 +1,127 @@
+---
+title: "split apply combine"
+author: "Matt Rosinski"
+date: "2022-08-11"
+output: html_document
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Source: http://www.gregreda.com/2013/10/26/working-with-pandas-dataframes/
+
+# Download salary information from Chicago City
+```{python}
+chicago_city_salaries_df = pd.read_csv("https://bit.ly/chicago-city-salaries")
+
+chicago_city_salaries_df.to_csv("data/chicago_city_salaries_df.csv", index = False)
+
+headers = ['name', 'title', 'department', 'salary']
+chicago = pd.read_csv('data/chicago_city_salaries_df.csv', 
+                      header=0,
+                      names=headers,
+                      converters={'salary': lambda x: float(x.replace('$', ''))})
+chicago.head()
+```
+
+# Find the highest paid person in each department
+```{python}
+import pandas as pd
+import numpy as np
+
+#  label each record from 1 to N, where N is the number of employees within the department.
+def ranker(df):
+    """Assigns a rank to each employee based on salary, with 1 being the highest paid.
+    Assumes the data is DESC sorted."""
+    df['dept_rank'] = np.arange(len(df)) + 1
+    return df
+
+ranked_df = (chicago
+     .sort_values('salary', ascending=False)
+     .groupby('department')
+     .apply(ranker)
+     )
+     
+ranked_df[ranked_df.dept_rank == 1].head()
+
+```
+
+# Testing
+```{r}
+num_str <- "$85334.00"
+str_view_all(num_str, pattern = "\\$")
+```
+
+# Download salary information from Chicago City
+```{r}
+library(tidyverse)
+library(janitor)
+
+chicago <-  read_csv("https://bit.ly/chicago-city-salaries") %>%
+    clean_names() %>% 
+    mutate(salary = as.numeric(str_remove_all(employee_annual_salary, "\\$")))
+
+chicago %>% glimpse()
+
+```
+
+# Find the highest paid person in each department
+```{r}
+# This finds the top salaries but we lose the information about the person
+ranker <- function(df) {
+    # Assigns a rank to each employee based on salary,
+    # with 1 being the highest paid. Assumes the data is DESC sorted.
+    df %>%
+        arrange(-salary) %>%
+        mutate(dept_rank = row_number())  
+    
+}
+
+chicago %>%
+    arrange(-salary) %>%
+    mutate(dept_rank = row_number())
+
+chicago %>% 
+    group_by(department) %>% 
+    summarise(top_salary = max(salary))
+
+ranker(df = chicago)
+
+library(tictoc)
+
+tic()
+chicago %>% 
+    split(.$department) %>% 
+    map_df(ranker) %>% 
+    select(position_title, department, salary, dept_rank) %>% 
+    filter(dept_rank == 1)
+toc()
+```
+
+```{r}
+grouped_chicago <- chicago %>%
+    group_by(department) %>%
+    nest()
+
+grouped_chicago$data[[1]] %>% ranker()
+
+tic()
+ranked_dept <- grouped_chicago %>%
+    mutate(ranked = map(data, ranker)) %>%
+    unnest(ranked)
+
+ranked_dept %>%
+    select(position_title, department, salary, dept_rank) %>% 
+    arrange(department) %>% 
+    filter(dept_rank == 1)
+toc()
+
+grouped_chicago$data[[1]] %>%
+    arrange(-salary) %>%
+    mutate(dept_rank = row_number())  
+
+```
+
