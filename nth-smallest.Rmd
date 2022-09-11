@@ -1,0 +1,49 @@
+---
+title: "nth smallest over time"
+author: "Matt Rosinski"
+date: "2022-09-10"
+output: html_document
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+https://twitter.com/machinatoonist/status/1568504244252327938
+
+```{r}
+
+library(tidyverse)
+library(timetk)
+library(lubridate)
+
+set.seed(42)
+
+df <- tibble(
+  datetime = timetk::tk_make_timeseries(
+    start_date = ymd('2022-01-01'),  
+    by = '10 min', 
+    length_out = 1000),
+  rand_variable = rnorm(1000)
+)
+ 
+df %>% 
+  summarise_by_time(
+    .date_var = datetime,
+    .by = '8H', 
+    third_smallest = nth(x = rand_variable, 
+                         order_by = rand_variable, 
+                         n = 3)
+  ) %>% head()
+```
+```{python}
+
+s = r.df
+
+s = s.set_index('datetime')
+
+s.resample('8H').apply(lambda x: x.nsmallest(3)[-1]).head()
+```
+
