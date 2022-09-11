@@ -1,0 +1,108 @@
+---
+title: "Sliding window aggregation"
+author: "Matt Rosinski"
+date: "2022-08-10"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(slider)
+library(timetk)
+library(lubridate)
+
+url = 'https://bit.ly/snowfall-data'
+
+alta_df = read_csv(url)
+
+```
+
+```{r}
+# Compute a sliding mean
+library(slider)
+
+slide_period_dbl(.x = alta_df, 
+                 .i = alta_df$DATE, 
+                 .period = "month", 
+                 .f = ~ mean(.x$SNOW, na.rm = TRUE))
+
+alta_df %>% glimpse()
+
+mean_snowfall <- function(df) {
+    df %>% summarise(
+            date = min(DATE),
+            mean_snowfall = mean(SNOW, na.rm = TRUE),
+            num_days = n()
+        )
+}
+
+slide_period_dfr(.x = alta_df, 
+                 .i = alta_df$DATE, 
+                 .period = "year", 
+                 .f = mean_snowfall)
+
+alta_df %>%
+    summarise_by_time(
+        .date_var = DATE, 
+        .by = 'year',
+        total_snowfall = mean(SNOW, na.rm = TRUE),
+        num_days = n()
+    )
+
+# Sliding window
+slide_period_dfr(.x = alta_df, 
+                 .i = alta_df$DATE, 
+                 .period = "year", 
+                 .f = mean_snowfall, 
+                 .before = 3) %>%
+    ggplot(aes(date, mean_snowfall)) +
+    geom_line(size = 1.5, alpha = 0.8)
+
+# Different sliding windows ----
+theme_set(theme_minimal(base_size = 16))
+tibble(.before = 1:6) %>%
+    mutate(
+        mean_snowfall = map(
+            .before,
+            ~ slide_period_dfr(.x = alta_df, 
+                 .i = alta_df$DATE, 
+                 .period = "year", 
+                 .f = mean_snowfall, 
+                 .before = .x)
+        )
+    ) %>% unnest(mean_snowfall) %>%
+    ggplot(aes(date, mean_snowfall, color = .before, group = .before)) +
+    geom_line(size = 1.5, alpha = 0.8) +
+    scale_color_viridis_c() +
+    labs(
+        color = "Number of years \n in sliding window",
+        x = "",
+        y = "Mean Daily Snowfall"
+    ) +
+    theme(
+        legend.position = "bottom"
+    )
+
+library(timetk)
+
+alta_df %>%
+  select(DATE, SNOW) %>%
+    summarise_by_time(
+        DATE = min(DATE),
+        SNOW = sum(SNOW, na.rm = TRUE), 
+        .by = 'year') %>%
+  mutate(
+    mean_snowfall = slidify_vec(
+        .x = SNOW, 
+        .f = ~ mean(.x, na.rm = TRUE), 
+        .period = 3, 
+        .align = 'right', .partial = TRUE)) %>%
+    ggplot(aes(DATE, mean_snowfall)) +
+    geom_line(size = 1.5, alpha = 0.8)
+
+
+```
+
