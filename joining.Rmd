@@ -1,0 +1,61 @@
+---
+title: "joining tables"
+author: "Matt Rosinski"
+date: "2022-08-10"
+output: html_document
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{python}
+import pandas as pd
+
+left_frame = pd.DataFrame(
+    {'key': range(5),
+    'left_value': ['luke', 'anikan', 'han', 'obiwan', 'yoda']})
+right_frame = pd.DataFrame(
+    {'key': range(2, 7),
+    'right_value': ['pilot', 'jedi', 'jedi master', 'sith', 'stormtrooper']})
+
+print('\n', 'Inner Join')
+# Use left_on and right_on if key names are different in each data frame
+# pd.merge(left_frame, right_frame, on='key', how='inner')
+pd.merge(left_frame, right_frame, how='inner', left_on='key', right_on='key')
+print('\n', 'Left Join')
+# left join
+pd.merge(left_frame, right_frame, on='key', how='left')
+print('\n', 'Right Join')
+# right join
+pd.merge(left_frame, right_frame, on='key', how='right')
+print('\n', 'Outer Join')
+# out join
+pd.merge(left_frame, right_frame, on='key', how='outer')
+
+```
+
+```{r}
+library(tidyverse)
+
+left_frame = tibble(
+    left_key = 0:4,
+    left_value = c('luke', 'anikan', 'han', 'obiwan', 'yoda'))
+
+right_frame = tibble(
+    right_key = 2:6,
+    right_value = c('pilot', 'jedi', 'jedi master', 'sith', 'stormtrooper')
+)
+
+left_frame %>% inner_join(right_frame, by = c("left_key" = "right_key"))
+
+left_frame %>% left_join(right_frame, by = c("left_key" = "right_key"))
+
+left_frame %>% right_join(right_frame, by = c("left_key" = "right_key"))
+
+left_frame %>% full_join(right_frame, by = c("left_key" = "right_key"))
+
+```
+
