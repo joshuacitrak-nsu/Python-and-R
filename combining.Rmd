@@ -1,0 +1,50 @@
+---
+title: "combining dataframes"
+author: "Matt Rosinski"
+date: "2022-08-10"
+output: html_document
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+
+left_frame = tibble(
+    key = 0:4,
+    left_value = c('luke', 'anikan', 'han', 'obiwan', 'yoda'))
+
+right_frame = tibble(
+    key = 2:6,
+    right_value = c('pilot', 'jedi', 'jedi master', 'sith', 'stormtrooper')
+)
+
+left_frame |> bind_cols(right_frame)
+
+```
+
+```{r}
+left_frame |> bind_rows(right_frame)
+```
+
+```{python}
+import pandas as pd
+
+left_frame = pd.DataFrame({'key': range(5), 
+                           'left_value': ['luke', 'anikan', 'han', 'obiwan', 'yoda']})
+right_frame = pd.DataFrame({'key': range(2, 7), 
+                           'right_value': ['pilot', 'jedi', 'jedi master', 'sith', 'stormtrooper']})
+                           
+# Bind columns
+pd.concat([left_frame, right_frame], axis=1)
+```
+
+z
+```{python}
+pd.concat([left_frame, right_frame], axis=0)
+
+```
