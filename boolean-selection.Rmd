@@ -1,0 +1,59 @@
+---
+title: "boolean selection"
+author: "Matt Rosinski"
+date: "2022-09-05"
+output: html_document
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Find the countries with an average YoY population growth rate greater than 3%
+```{r}
+library(tidyverse)
+library(reticulate)
+
+data("population")
+
+# population %>% glimpse()
+
+pop_growth <- population %>% 
+    group_by(country) %>%
+    mutate(growth = (population - lag(population))/lag(population)*100) %>%
+    summarise(avg_growth = mean(growth, na.rm=TRUE)) %>%
+    ungroup()
+
+df <- pop_growth[pop_growth['avg_growth'] > 3,]
+df[order(df$avg_growth, decreasing = TRUE), ]
+
+# The tidyverse method I would normally use:
+# pop_growth %>% filter(avg_growth > 3) %>% arrange(desc(avg_growth))
+
+```
+```{r}
+max(population$year)
+min(population$year)
+
+```
+
+```{python}
+import pandas as pd
+
+pop_growth = r.pop_growth
+
+(pop_growth[pop_growth['avg_growth'] > 3]
+    .sort_values('avg_growth', ascending=False))
+
+```
+
+```{python}
+import pandas as pd
+
+pop_growth['avg_growth'] > 3
+
+```
+
+
