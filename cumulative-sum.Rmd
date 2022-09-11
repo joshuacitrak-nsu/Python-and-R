@@ -1,0 +1,65 @@
+---
+title: "Cumulative Operations"
+author: "Matt Rosinski"
+date: "2022-08-09"
+output: html_document
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{python}
+# Cumulative summation
+import pandas as pd
+url = 'https://bit.ly/snowfall-data'
+
+alta_df = pd.read_csv(url)
+    
+dates = pd.to_datetime(alta_df.DATE)
+
+snow = (alta_df
+        .SNOW
+        .rename(dates))
+(snow
+    .loc['2016-10':'2017-09']
+    .cumsum())
+    
+```
+
+```{python}
+
+(snow
+    .loc['2016-10':'2017-09']
+    .cumsum())
+
+
+```
+
+
+
+
+
+
+
+
+```{r}
+library(tidyverse)
+library(reticulate)
+library(timetk)
+library(lubridate)
+
+url = 'https://bit.ly/snowfall-data'
+
+alta_df = read_csv(url)
+# Base R does not handle NA values in a nice way.  All values return NA if one
+# encountered without error. 
+alta_df |>
+    select(DATE, SNOW) |>
+    filter((DATE >= ymd('2016-10-01')) & (DATE < ymd('2017-10-01'))) |>
+    mutate(cumul_snowfall = cumsum(if_else(condition = is.na(SNOW), 0, SNOW)))
+
+```
+
