@@ -1,0 +1,67 @@
+---
+title: "ordered categories"
+author: "Matt Rosinski"
+date: "2022-09-11"
+output: html_document
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+
+data("diamonds")
+
+# Clarity is an ordinal data type
+diamonds %>% glimpse()
+
+# diamonds %>% distinct(clarity)
+
+levels(diamonds$clarity)
+
+# "I1"   "SI2"  "SI1"  "VS2"  "VS1"  "VVS2" "VVS1" "IF" 
+```
+
+
+```{python}
+import pandas as pd
+
+diamonds = r.diamonds
+
+# Clarity is still category but is it ordered?
+diamonds.info()
+
+# Verify that original column was ordered
+clarity_cat = diamonds['clarity']
+clarity_cat.cat.ordered
+clarity_cat.dtype
+
+# Remove ordered categories
+clarity = diamonds['clarity'].astype('object')
+clarity = clarity.astype('category')
+
+# Confirm that the new series is not an ordered categorical variable
+print()
+print(f'Test for if new series has ordered categories: {clarity.cat.ordered}')
+print(f'Check dtype of series: {clarity.dtype}')
+clarity.dtype
+
+# Create a new categorical dtype
+cats = ['I1', 'SI2', 'SI1', 'VS2', 'VS1', 'VVS2', 'VVS1', 'IF']
+clarity_dtype = pd.CategoricalDtype(cats, ordered=True)
+clarity_ordered_cat = clarity.astype(clarity_dtype)
+# clarity_ordered_cat.head()
+
+# Confirm our series has ordered categories again
+print()
+print(f'Verify if the series now has ordered categories: {clarity_ordered_cat.cat.ordered}')
+print(f'Check dtype of new ordered series: {clarity_ordered_cat.dtype}')
+clarity_ordered_cat.dtype
+
+
+```
+
