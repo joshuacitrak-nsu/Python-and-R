@@ -14,7 +14,6 @@ knitr::opts_chunk$set(echo = TRUE)
 https://twitter.com/machinatoonist/status/1568504244252327938
 
 ```{r}
-
 library(tidyverse)
 library(timetk)
 library(lubridate)
@@ -28,7 +27,10 @@ df <- tibble(
     length_out = 1000),
   rand_variable = rnorm(1000)
 )
- 
+```
+
+
+```{r}
 df %>% 
   summarise_by_time(
     .date_var = datetime,
@@ -38,6 +40,7 @@ df %>%
                          n = 3)
   ) %>% head()
 ```
+
 ```{python}
 
 s = r.df
