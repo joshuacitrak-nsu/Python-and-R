@@ -1,0 +1,71 @@
+---
+title: "query filter"
+author: "Matt Rosinski"
+date: "2022-09-05"
+output: html_document
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Find countries with average YoY decreases in population between 1995-2013
+```{r}
+library(tidyverse)
+library(reticulate)
+
+data("population")
+
+pop_growth <- population |> 
+    group_by(country) |>
+    mutate(growth = (population - lag(population))/lag(population)*100) |>
+    summarise(avg_growth = round(mean(growth, na.rm=TRUE), 1)) |>
+    ungroup()
+
+pop_growth |> 
+  filter(avg_growth < 0) |> 
+  arrange(avg_growth) |> 
+  slice_head(n=10)
+
+```
+
+```{r}
+max(population$year)
+min(population$year)
+
+```
+
+```{python}
+import pandas as pd
+
+pop_growth = r.pop_growth
+
+(pop_growth
+  .query('avg_growth < 0')
+  .sort_values('avg_growth')[:10])
+
+```
+
+```{python}
+
+pop_growth.query('avg_growth < 0')
+
+
+
+```
+
+
+
+
+
+
+```{python}
+import pandas as pd
+
+pop_growth['avg_growth'] > 3
+
+```
+
+
