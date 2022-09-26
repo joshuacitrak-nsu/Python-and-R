@@ -1,0 +1,43 @@
+---
+title: "extract-full-rows-with-index-by-group"
+author: "Matt Rosinski"
+date: "2022-09-25"
+output: html_document
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{python}
+import pandas as pd
+
+emp = pd.read_csv('/Users/mattrosinski/git/dunder-data/Master_Data_Analysis_with_Python_by_Ted_Petrou_20210924/Jupyter Notebooks/data/employee.csv')
+```
+
+# Extract the full records of employees with the maximum salary by dept
+```{python}
+
+max_salary_indexes = (emp.groupby('dept', as_index=False)
+                         .agg(max_salary_index = ('salary', 'idxmax')))
+# max_salary_indexes
+
+emp.iloc[max_salary_indexes['max_salary_index']]
+
+```
+
+```{r}
+library(tidyverse)
+library(reticulate)
+
+emp <- py$emp
+
+emp %>% 
+    group_by(dept) %>%
+    arrange(desc(salary)) %>% 
+    slice_head(n = 1) %>% 
+    ungroup()
+```
+

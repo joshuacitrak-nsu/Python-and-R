@@ -1,0 +1,32 @@
+---
+title: "generating simulated data"
+author: "Matt Rosinski"
+date: "2022-09-26"
+output: html_document
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+# Show how to generate simulated datasets for model testing in Python and R
+
+```{r}
+library(tidyverse)
+
+# First generate some dummy data for the example
+set.seed(42)
+df <- tibble(
+    index_ = seq(1, 100),
+    value = rnorm(100, mean = 50, sd = 10),
+    category = 'init',
+    status = sample(c('win', 'lose', 'draw'), 
+                    size = 100, 
+                    prob = c(.48, .48, 0.04), 
+                    replace = TRUE))
+
+df %>% count(status)
+```
