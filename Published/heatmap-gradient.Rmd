@@ -1,0 +1,104 @@
+---
+title: "crosstab"
+author: "Matt Rosinski"
+date: "2022-10-02"
+output: html_document
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(reticulate)
+library(lubridate)
+library(readr)
+library(janitor)
+library(timetk)
+
+df <- read_delim("data/company_202209.csv", 
+    delim = "\t", escape_double = FALSE, 
+    trim_ws = TRUE)
+
+df_prep <- df %>% 
+    clean_names() %>% 
+    mutate(date_of_registration = dmy(date_of_registration),
+           month = lubridate::month(date_of_registration, label = TRUE),
+           year = lubridate::year(date_of_registration)) %>%
+    filter(!is.na(date_of_registration)) %>% 
+    summarise_by_time(.date_var = date_of_registration, 
+                      .by = 'month', 
+                      count = n())
+
+df_monthly_count %>% 
+    filter(date_of_registration >= ymd('2002-01-01')) %>% 
+    mutate(month = lubridate::month(date_of_registration, label = TRUE),
+           year = as.factor(lubridate::year(date_of_registration)) %>% 
+             fct_rev()) %>%
+    ggplot(aes(month, year)) +
+    geom_tile(aes(fill = -count)) +
+    geom_text(aes(label = str_glue('{round(count/1000, 1)}k'), 
+                  alpha = 0.6), 
+              color = 'black', size = 3) +
+    scale_fill_gradient(low = 'salmon', high = 'light blue') +
+    labs(title = "New Company Registrations By Month - Australia",
+         caption = "ASIC Company Register: data.gov.au",
+         x = '',
+         y = '') +
+    theme(legend.position = 'none')
+
+```
+
+```{python}
+import pandas as pd
+
+df = pd.read_csv("data/company_202209.csv", sep='\t', engine='python')
+
+df.nunique()
+
+df.loc[:,'Type':'Status'] = df.loc[:,'Type':'Status'].astype('category')
+
+dtype_dict = {
+    'ACN':'int64',
+    'Date of Registration':'datetime64[ns]',
+    'Previous State of Registration':'category',
+    'Modified since last report':'category',
+    'Current Name Indicator':'category',
+    'ABN': 'int64',
+    'Current Name Start Date':'datetime64[ns]'
+              }
+
+df = df.astype(dtype_dict)
+
+# Filter out companies with not registration date
+filt = df['Date of Registration'].notna()
+df = df.loc[filt]
+
+# Create month and year columns
+df.insert(1, 'month', df['Date of Registration'].dt.month_name())
+df['year'] = pd.DatetimeIndex(df['Date of Registration']).year.astype('Int16')
+
+# Create custom ordered datatype for months
+monthorder = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+ordered_month_type = pd.CategoricalDtype(categories=monthorder, ordered=True)
+
+df['month'] = df['month'].astype(ordered_month_type)
+```
+
+
+```{python}
+
+(df.pivot_table(index='year', values='ACN', columns='month', aggfunc='count')
+  .iloc[-20:,:]
+  .round(-2)
+  .style
+  .background_gradient(axis=0)
+  .highlight_max(axis=None, color='Salmon')
+  .format('{:,}')
+  )
+
+```
+

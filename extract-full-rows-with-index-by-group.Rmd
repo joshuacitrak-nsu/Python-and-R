@@ -19,12 +19,26 @@ emp = pd.read_csv('/Users/mattrosinski/git/dunder-data/Master_Data_Analysis_with
 
 # Extract the full records of employees with the maximum salary by dept
 ```{python}
-
 max_salary_indexes = (emp.groupby('dept', as_index=False)
                          .agg(max_salary_index = ('salary', 'idxmax')))
 # max_salary_indexes
 
 emp.iloc[max_salary_indexes['max_salary_index']]
+```
+
+
+```{python}
+# Alternative approach that uses the index for a different problem
+# 
+
+college = pd.read_csv("/Users/mattrosinski/git/dunder-data/Master_Data_Analysis_with_Python_by_Ted_Petrou_20210924/Jupyter Notebooks/data/college.csv")
+
+(college.set_index('instnm')
+       .groupby('stabbr')
+       .agg(
+           college = ('ugds', 'idxmax'),
+           ug_max = ('ugds', 'max'))
+        .head(10))
 
 ```
 
