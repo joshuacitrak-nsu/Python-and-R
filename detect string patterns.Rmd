@@ -1,0 +1,93 @@
+---
+title: "detect string"
+author: "Matt Rosinski"
+date: "2022-10-15"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{python}
+import pandas as pd
+movie = pd.read_csv('/Users/mattrosinski/git/dunder-data/Master_Data_Analysis_with_Python_by_Ted_Petrou_20210924/Jupyter Notebooks/data/movie.csv')
+
+title = movie['title']
+title.head(5)
+
+```
+
+
+```{python}
+def find_pattern(s, pattern, **kwargs):
+    filt = s.str.contains(pattern, **kwargs)
+    return s[filt]
+
+find_pattern(title, r'^The Fl')
+```
+
+```{r}
+library(tidyverse)
+
+movie <- read_csv('/Users/mattrosinski/git/dunder-data/Master_Data_Analysis_with_Python_by_Ted_Petrou_20210924/Jupyter Notebooks/data/movie.csv')
+
+title = movie['title']
+
+title %>% slice_head(n=5)
+
+pattern <- 'The Fl'
+
+find_pattern <- function(s, pattern) {
+    filt <- s %>% str_detect(s %>% pull(), pattern)
+    
+}
+
+find_pattern_df <- function(df, col, pattern) {
+    df %>% 
+    mutate(find = !! sym(col) %>% str_detect(pattern)) %>% 
+    filter(find == TRUE) %>% select(!! sym(col))
+}
+
+find_pattern_df(df = title, col = "title", pattern = pattern)
+
+str_detect(title %>% pull(), pattern)
+
+find_pattern(title, 'The Fl')
+    
+title[str_detect(title %>% pull(), pattern = pattern),]
+
+
+title %>% 
+    mutate(find = title %>% str_detect('The Fl')) %>% 
+    filter(find == TRUE) %>% select(title)
+
+```
+
+Find movies that start with 'B' and end with 'd'
+```{python}
+import pandas as pd
+
+movie = pd.read_csv('/Users/mattrosinski/git/dunder-data/Master_Data_Analysis_with_Python_by_Ted_Petrou_20210924/data/movie.csv')
+
+def find_pattern(s, pattern, **kwargs):
+    filt = s.str.contains(pattern, **kwargs)
+    return s[filt]
+
+title = movie['title']
+find_pattern(title, r'^B.*d$')
+```
+
+```{r}
+library(tidyverse)
+
+movie <- read_csv('/Users/mattrosinski/git/dunder-data/Master_Data_Analysis_with_Python_by_Ted_Petrou_20210924/Jupyter Notebooks/data/movie.csv')
+
+title = movie['title']
+
+filt <- title %>% pull() %>% str_detect(pattern = '^B.*d$')
+
+title[filt,]
+
+```
+
