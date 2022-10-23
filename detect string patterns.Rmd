@@ -3,6 +3,8 @@ title: "detect string"
 author: "Matt Rosinski"
 date: "2022-10-15"
 output: html_document
+editor_options: 
+  chunk_output_type: inline
 ---
 
 ```{r setup, include=FALSE}
@@ -31,6 +33,10 @@ find_pattern(title, r'^The Fl')
 library(tidyverse)
 
 movie <- read_csv('/Users/mattrosinski/git/dunder-data/Master_Data_Analysis_with_Python_by_Ted_Petrou_20210924/Jupyter Notebooks/data/movie.csv')
+
+movie <- read_csv("https://raw.githubusercontent.com/machinatoonist/Python-and-R/main/data/imdb_top_1000.csv")
+
+movie %>% glimpse()
 
 title = movie['title']
 
@@ -64,28 +70,30 @@ title %>%
 
 ```
 
-Find movies that start with 'B' and end with 'd'
+
+
+Find movies that start with 'S' and end with 'k'
 ```{python}
 import pandas as pd
 
-movie = pd.read_csv('/Users/mattrosinski/git/dunder-data/Master_Data_Analysis_with_Python_by_Ted_Petrou_20210924/data/movie.csv')
+movie = pd.read_csv('https://bit.ly/imdb-movie-titles')
 
-def find_pattern(s, pattern, **kwargs):
-    filt = s.str.contains(pattern, **kwargs)
-    return s[filt]
+title = movie['Series_Title']
 
-title = movie['title']
-find_pattern(title, r'^B.*d$')
+filt = title.str.contains(r'^S.*k$')
+
+title[filt]
+
 ```
 
 ```{r}
 library(tidyverse)
 
-movie <- read_csv('/Users/mattrosinski/git/dunder-data/Master_Data_Analysis_with_Python_by_Ted_Petrou_20210924/Jupyter Notebooks/data/movie.csv')
+movie <- read_csv("https://bit.ly/imdb-movie-titles")
 
-title = movie['title']
+title = movie['Series_Title']
 
-filt <- title %>% pull() %>% str_detect(pattern = '^B.*d$')
+filt <- title %>% pull() %>% str_detect(pattern = '^S.*k$')
 
 title[filt,]
 
