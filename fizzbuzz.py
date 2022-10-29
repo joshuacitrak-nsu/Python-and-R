@@ -4,6 +4,7 @@
 # Substitute the number with "fizz" if it is divisible by 3
 # Substitute the number with "buzz" if it is divisible by 5
 # Substitute with "FIZZBUZZ!" if it is divisible by both 3 and 5
+#
 
 count = range(1,101)
 for each in count:
