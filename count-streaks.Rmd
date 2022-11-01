@@ -43,7 +43,6 @@ get_streaks %>%
     ggplot(aes(as_factor(streak), pct)) +
     geom_col(fill = "#00A5B3") +
     scale_y_continuous(labels = scales::label_percent()) +
-    # scale_x_binned() +
     labs(
         title = "Chances of Consecutive Increases in Closing Share Price (Apple 2012-22)",
         x = "Consecutive day by day increases in share price",
