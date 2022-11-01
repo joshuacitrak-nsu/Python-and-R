@@ -61,8 +61,6 @@ import matplotlib.pyplot as plt
 
 df = r.apple_stock_prices
 
-df.info()
-
 df['up'] = df['close'].diff().fillna(0) > 0
 
 s = df['up']
@@ -73,88 +71,51 @@ df['streak'] = (s
                  .where(lambda x: x <0)
                  .ffill()
                  .add(s.cumsum(), fill_value=0))
-                 
 
-df.head()
+df.head(10)
+```
 
 
-ax = (df
-        ['streak']
+```{python}
+ax = (df['streak']
         .value_counts(normalize=True)
         .mul(100).round(1)
         .plot.bar(figsize=(8, 4), 
         title="Chances of Consecutive Increases in Closing Share Price (Apple 2012-22)",
         xlabel="Probability",
-        ylabel="Consecutive day by day increases in share price")
+        ylabel="Consecutive day by day increases in share price"))
 
 ax.get_figure().savefig('apple_price_increase_streaks.png')
 
-ax.get_figure().show()
+
 ```
 
 
 ```{python}
 # a bar plot of the data
-x = (df
-        ['streak']
-        .value_counts(normalize=True)
-        .mul(100)
-        .round(1)
-        .to_numpy()
-        )
-
-print(x)
-_ = plt.bar(x, height=10)
-
-
-plt.xlabel('Consecutive day by day increases in share price')
-plt.ylabel('Probability')
-plt.title('Chances of Consecutive Increases in Closing Share Price (Apple 2012-22)')
-plt.ylim(0, 100)
-plt.grid(True)
-plt.show()
-
 plt.close()
-```
 
+streak_counts = (df
+                    ['streak']
+                    .value_counts(normalize=True)
+                    .mul(100)
+                    .round(1)
+                    )
 
-```{python}
-plt.plot()
-plt.title('Chances of Consecutive Increases in Closing Share Price (Apple 2012-22)')
-plt.xlabel('Consecutive day by day increases in share price')
-plt.ylabel('Probability %')
+x = streak_counts.index
+y = streak_counts.values
 
-# Tweak spacing to prevent clipping of ylabel
-plt.subplots_adjust(left=0.15)
-plt.show()
-```
+fig, ax = plt.subplots()
+bar_obj = ax.bar(x=x, height=y)
 
-
-```{python}
-import numpy as np
-
-# Fixing random state for reproducibility
-np.random.seed(19680801)
-
-mu, sigma = 100, 15
-x = mu + sigma * np.random.randn(10000)
-
-type(x)
-
-# the histogram of the data
-n, bins, patches = plt.hist(x, 50, density=True, facecolor='g', alpha=0.75)
-
-
-plt.xlabel('Smarts')
-plt.ylabel('Probability')
-plt.title('Histogram of IQ')
-plt.text(60, .025, r'$\mu=100,\ \sigma=15$')
-plt.xlim(40, 160)
-plt.ylim(0, 0.03)
+_ = plt.bar(x, height=y)
+_ = plt.xlabel('Consecutive day by day increases in share price')
+_ = plt.ylabel('Probability %')
+_ = plt.title('Chances of Consecutive Increases in Closing Share Price (Apple 2012-22)')
 plt.grid(True)
 plt.show()
 
-
-
 ```
+
+
 
