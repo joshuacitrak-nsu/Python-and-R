@@ -1,0 +1,58 @@
+---
+title: "tidy data"
+output: html_document
+date: "2022-11-03"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+# For other examples see:
+# https://kwstat.github.io/untidydata2/articles/untidy-spreadsheet-example.html#raw-data
+
+```
+
+
+```{r}
+
+library(tidyverse)
+
+data("billboard")
+
+billboard %>% glimpse()
+
+billboard %>% 
+    pivot_longer(cols = wk1:wk76, 
+                 names_to = 'week',
+                 values_to = 'rank', 
+                 values_drop_na = TRUE) %>% 
+    mutate(week = str_remove(week, "wk") %>% as.integer(),
+           date = as.Date(date.entered) + 7 * (week - 1),
+           date.entered = NULL) %>% 
+    arrange(artist, track, week)
+
+```
+
+```{python}
+
+import pandas as pd
+
+billboard = r.billboard
+
+columns = billboard.columns[3:]
+
+billboard_long = (billboard
+    .melt(id_vars = ['artist', 'track', 'date.entered'], 
+            value_vars = columns, 
+            var_name = 'week',
+            value_name ='rank')
+    .dropna()
+    .sort_values(['artist', 'track'])
+    .assign(date = lambda x: x['date.entered'])
+)
+
+billboard_long
+```
+
