@@ -1,6 +1,8 @@
 ---
 title: "tidy data"
-output: html_document
+output: 
+  html_document: 
+    df_print: tibble
 date: "2022-11-03"
 ---
 
@@ -14,16 +16,17 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```
 
-
+# Find the number one songs by week
 ```{r}
 
 library(tidyverse)
 
 data("billboard")
 
-billboard %>% glimpse()
+billboard <-  billboard %>% 
+    mutate(across(contains("wk"), ~ as.numeric(.x)))
 
-billboard %>% 
+billboard_long <- billboard %>% 
     pivot_longer(cols = wk1:wk76, 
                  names_to = 'week',
                  values_to = 'rank', 
@@ -33,7 +36,24 @@ billboard %>%
            date.entered = NULL) %>% 
     arrange(artist, track, week)
 
+number_ones <- billboard_long %>% 
+    filter(rank == 1) %>% 
+    arrange(date)
+
+number_ones %>% slice_head(n = 10)
 ```
+
+
+```{r}
+billboard %>% View()
+```
+
+```{r}
+number_ones %>%  View()
+
+
+```
+
 
 ```{python}
 
@@ -49,10 +69,53 @@ billboard_long = (billboard
             var_name = 'week',
             value_name ='rank')
     .dropna()
+    .reset_index(drop = True)
+    .assign(week = lambda x: x['week'].str.replace('wk', "").astype('int'))
+    .assign(date = lambda x: pd.to_datetime(x['date.entered']) + \
+            7*pd.to_timedelta((x['week'] - 1), unit='d'))
+    .drop('date.entered', axis=1)
     .sort_values(['artist', 'track'])
-    .assign(date = lambda x: x['date.entered'])
+
 )
 
-billboard_long
+number_ones = (billboard_long
+    .query('rank == 1')
+    .sort_values('date'))
+    
+number_ones.head(10)
+
 ```
+
+
+
+```{python}
+billboard
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
