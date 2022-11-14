@@ -1,0 +1,93 @@
+---
+title: "multi-linear regression"
+output: html_document
+date: "2022-11-14"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidymodels)
+library(tidyverse)
+
+data("ames")
+
+ames_tbl <- ames %>% 
+    select(Gr_Liv_Area, Sale_Price)
+
+set.seed(42)
+splits = rsample::initial_split(ames_tbl, prop = 0.8)
+train_tbl = training(splits)
+test_tbl = testing(splits)
+
+lin_reg_model <- linear_reg(mode = "regression") %>% 
+    set_engine("lm") %>% 
+    fit(Sale_Price ~ Gr_Liv_Area, data = train_tbl)
+
+y_pred <- lin_reg_model %>% predict(test_tbl)
+
+test_tbl %>% 
+    bind_cols(y_pred) %>% 
+    metrics(truth = Sale_Price, estimate = .pred)
+
+pred_tbl <- test_tbl %>% 
+    select(Gr_Liv_Area) %>% 
+    bind_cols(y_pred) %>% 
+    rename(Sale_Price = .pred)
+    
+test_tbl %>% 
+    bind_cols(y_pred) %>% 
+    ggplot(aes(Gr_Liv_Area, Sale_Price)) +
+    geom_point(color = "blue", alpha = 0.5, size = 3) +
+    geom_line(data = pred_tbl, color = "red") +
+    labs(title = "Linear regression fit to test data",
+         x = "Living Area Square Feet",
+         y = "Sale Price $") +
+    theme_minimal()
+
+
+```
+
+```{python}
+
+from sklearn.linear_model import LinearRegression
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_squared_error
+
+import matplotlib.pyplot as plt
+
+reg = LinearRegression()
+
+ames = r.ames
+
+X = ames['Gr_Liv_Area'].values.reshape(-1, 1)
+y = ames['Sale_Price'].values
+
+y.shape
+X.shape
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, \
+                                        test_size= 0.2, random_state=42)
+
+reg.fit(X_train, y_train)
+
+y_pred = reg.predict(X_test)
+
+plt.close()
+plt.scatter(X_test, y_test, color='blue', alpha=0.5)
+plt.plot(X_test, y_pred, color='red')
+plt.xlabel('Living Area Square Feet')
+plt.ylabel('Sales Price $')
+plt.title('Linear regression fit to test data')
+plt.show()
+
+r_squared = reg.score(X_test, y_test)
+rmse = mean_squared_error(y_test, y_pred, squared=False)
+
+print(f'R squared: {r_squared}')
+print(f'RMSE: {rmse}')
+
+```
+
