@@ -42,11 +42,10 @@ test_tbl %>%
     ggplot(aes(Gr_Liv_Area, Sale_Price)) +
     geom_point(color = "blue", alpha = 0.5, size = 3) +
     geom_line(data = pred_tbl, color = "red") +
-    labs(title = "Linear regression fit to test data",
+    labs(title = "Tidymodels linear regression model predictions on test data",
          x = "Living Area Square Feet",
          y = "Sale Price $") +
     theme_minimal()
-
 
 ```
 
@@ -80,7 +79,7 @@ plt.scatter(X_test, y_test, color='blue', alpha=0.5)
 plt.plot(X_test, y_pred, color='red')
 plt.xlabel('Living Area Square Feet')
 plt.ylabel('Sales Price $')
-plt.title('Linear regression fit to test data')
+plt.title('Scikit Learn linear regression model predictions on test data')
 plt.show()
 
 r_squared = reg.score(X_test, y_test)
