@@ -1,0 +1,213 @@
+---
+title: "multiple linear regression"
+output: html_document
+date: "2022-11-17"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidymodels)
+library(tidyverse)
+library(correlationfunnel)
+library(skimr)
+
+data("ames")
+
+ames_tbl <- ames %>% 
+    select(Sale_Price, everything())
+
+ames_tbl %>% 
+    binarize(
+        n_bins = 5,
+        thresh_infreq = 0.1,
+        name_infreq = "Other",
+        one_hot = TRUE
+    ) %>% 
+    correlate(target = Sale_Price__230000_Inf) %>% 
+plot_correlation_funnel(interactive = TRUE)
+
+multifactors <- ames_tbl %>% 
+    binarize(
+        n_bins = 5,
+        thresh_infreq = 0.1,
+        name_infreq = "Other",
+        one_hot = TRUE
+    ) %>% 
+    correlate(target = Sale_Price__230000_Inf) # %>% 
+    # filter(abs(correlation) >= 0.35)
+
+
+factors_list <- multifactors %>% 
+    filter(feature != "Sale_Price") %>% 
+    pull(feature)
+
+
+```
+
+```{r}
+data_tbl <- ames_tbl %>% 
+    select(Sale_Price, all_of(factors_list))
+
+data_tbl %>% glimpse()
+
+splits <- initial_split(data_tbl, prop = 0.8)
+
+training(splits) %>% glimpse()
+```
+
+
+```{r}
+library(tidymodels)
+library(tidyverse)
+
+data("ames")
+
+ames_tbl <- ames %>% 
+    select(Sale_Price, everything())
+
+splits <- initial_split(ames_tbl, prop = 0.8)
+
+linear_recipe <- 
+    recipe(Sale_Price ~ Gr_Liv_Area + Garage_Cars + Bedroom_AbvGr + Year_Built,
+           data = training(splits)) %>% 
+    step_dummy(all_nominal(), one_hot = TRUE) %>% 
+    step_other()
+
+linear_recipe %>% prep() %>% juice() %>% glimpse()
+
+wkflw_fit <- workflow() %>% 
+    add_model(
+        linear_reg(mode = "regression", engine = "lm")
+    ) %>% 
+    add_recipe(linear_recipe) %>% 
+    fit(training(splits))
+
+metrics_tbl <- wkflw_fit %>% 
+    predict(testing(splits)) %>% 
+    bind_cols((testing(splits) %>% select(Sale_Price))) %>% 
+    metric_set(rmse, rsq)(Sale_Price, .pred)
+
+metrics_tbl
+```
+
+
+```{r}
+rsq_estimate = metrics_tbl %>% 
+    filter(.metric == 'rsq') %>% 
+    pull(.estimate) %>% round(4)
+
+rmse_estimate = metrics_tbl %>% 
+    filter(.metric == "rmse") %>% 
+    pull(.estimate) %>% scales::comma()
+    
+```
+
+```{r}
+norm_linear_recipe <- 
+    recipe(Sale_Price ~ Gr_Liv_Area + Garage_Cars + Bedroom_AbvGr + Year_Built,
+           data = training(splits)) %>% 
+    step_normalize(all_numeric_predictors()) %>% 
+    step_dummy(all_nominal(), one_hot = TRUE) %>% 
+    step_other()
+
+# norm_linear_recipe %>% prep() %>% juice() %>% glimpse()
+
+wkflw_fit_norm_linear <- workflow() %>% 
+    add_model(
+        linear_reg(mode = "regression", engine = "lm")
+    ) %>% 
+    add_recipe(norm_linear_recipe) %>% 
+    fit(training(splits))
+
+norm_metrics_tbl <- wkflw_fit_norm_linear %>% 
+    predict(testing(splits)) %>% 
+    bind_cols((testing(splits) %>% select(Sale_Price))) %>% 
+    metric_set(rmse, rsq)(Sale_Price, .pred)
+
+norm_metrics_tbl
+```
+
+```{r}
+
+pred_tbl <- testing(splits) %>% 
+    select(Gr_Liv_Area) %>% 
+    bind_cols(wkflw_fit %>% 
+                  predict(testing(splits))) %>% 
+    rename(Sale_Price = .pred)
+    
+testing(splits) %>% 
+    ggplot(aes(Gr_Liv_Area, Sale_Price)) +
+    geom_point(color = "blue", alpha = 0.5, size = 3) +
+    geom_line(data = pred_tbl, color = "red", alpha = 0.8) +
+    labs(title = "Tidymodels multiple linear regression model predictions on test data", 
+         subtitle = str_glue("R squared: {rsq_estimate}, RSME: {rmse_estimate}"),
+         x = "Living Area Square Feet",
+         y = "Sale Price $") +
+    theme_minimal()
+
+```
+
+```{python}
+import pandas as pd
+from sklearn.linear_model import LinearRegression
+
+lr = LinearRegression()
+
+ames = r.ames_tbl
+```
+
+```{python}
+ames.info()
+
+```
+
+```{python}
+import pandas as pd
+from sklearn.linear_model import LinearRegression
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_squared_error
+import matplotlib.pyplot as plt
+
+ames = r.ames_tbl
+
+lr = LinearRegression()
+
+X = ames[['Gr_Liv_Area', 'Garage_Cars', 'Bedroom_AbvGr', 'Year_Built']]
+y = ames['Sale_Price']
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, \
+                                        test_size= 0.2, random_state=42)
+
+lr.fit(X_train, y_train)
+
+y_pred = lr.predict(X_test)
+
+r_squared = lr.score(X_test, y_test)
+rmse = mean_squared_error(y_test, y_pred, squared=False)
+
+print(f'R squared: {r_squared}')
+print(f'RMSE: {rmse}')
+
+```
+```{python}
+lr.coef_
+```
+
+
+```{python}
+# X_test['Gr_Liv_Area'].reset_index(drop=True)
+
+
+plt.close()
+plt.scatter(X_test['Gr_Liv_Area'], y_test, color='blue', alpha=0.5)
+plt.plot(X_test['Gr_Liv_Area'].reset_index(drop=True), y_pred, color='red')
+plt.xlabel('Living Area Square Feet')
+plt.ylabel('Sales Price $')
+plt.title('Scikit Learn multiple linear regression model predictions on test data')
+plt.show()
+
+```
+
