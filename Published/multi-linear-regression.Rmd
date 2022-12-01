@@ -192,8 +192,13 @@ print(f'R squared: {r_squared}')
 print(f'RMSE: {rmse}')
 
 ```
+
 ```{python}
 lr.coef_
+```
+```{python}
+
+X_train.corr().round(2)
 ```
 
 
