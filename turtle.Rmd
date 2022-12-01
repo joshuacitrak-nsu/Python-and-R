@@ -1,0 +1,91 @@
+---
+title: "turtle"
+output: html_document
+date: "2022-11-06"
+---
+
+```{r}
+library(tidyverse)
+library(TurtleGraphics)
+
+turtle_init()
+turtle_hide()
+
+for (i in seq(1,20)) {
+    
+    turtle_forward(20)
+    turtle_left(108)
+}
+
+turtle_show()
+
+
+
+```
+```{r}
+turtle_init()
+turtle_do({
+
+for (i in seq(1,20)) {
+    
+    turtle_forward(20)
+    turtle_left(108)
+}
+})
+
+```
+
+```{r}
+koch <- function(s=50, n=6) {
+if (n <= 1)
+turtle_forward(s)
+else {
+koch(s/3, n-1)
+turtle_left(60)
+koch(s/3, n-1)
+turtle_right(120)
+koch(s/3, n-1)
+turtle_left(60)
+koch(s/3, n-1)
+}
+    
+}
+turtle_init(600, 400, "error")
+turtle_do({
+turtle_up()
+turtle_left(90)
+turtle_forward(250)
+turtle_right(180)
+turtle_down()
+koch(500, 6)
+})
+```
+```{r}
+turtle_star <- function(intensity=1) {
+y <- sample(1:657, 360*intensity, replace=TRUE)
+for (i in 1:(360*intensity)) {
+turtle_right(90)
+turtle_col(colors()[y[i]])
+x <- sample(1:100,1)
+turtle_forward(x)
+turtle_up()
+turtle_backward(x)
+turtle_down()
+turtle_left(90)
+turtle_forward(1/intensity)
+turtle_left(1/intensity)
+}
+}
+set.seed(124)
+turtle_init(500, 500)
+turtle_do({
+turtle_left(90)
+turtle_star(5)
+})
+```
+
+
+```{python}
+import
+```
+
