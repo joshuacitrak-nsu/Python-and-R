@@ -1,0 +1,74 @@
+---
+title: "correlation funnel"
+output: html_document
+date: "2022-11-17"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidymodels)
+library(tidyverse)
+library(correlationfunnel)
+library(skimr)
+
+
+data("ames")
+
+ames_tbl <- ames %>% 
+    select(Sale_Price, everything())
+
+# Check for NAs
+# ames_tbl %>% skim()
+
+ames_tbl %>% 
+    
+    # bin continuous variables
+    binarize(
+        n_bins = 5,
+        thresh_infreq = 0.1,
+        name_infreq = "Other",
+        one_hot = TRUE
+    ) %>% 
+    correlate(target = Sale_Price__230000_Inf) %>% 
+    
+    # Reduce number of features for plot ranking by max correlation
+    group_by(feature) %>% 
+    mutate(grp_max = max(correlation)) %>% 
+    ungroup() %>% 
+    arrange(desc(grp_max)) %>% 
+    slice_head(n = 100) %>%
+    select(-grp_max) %>% 
+    
+    # plot correlation funnel
+    plot_correlation_funnel(interactive = TRUE)
+```
+
+# Determine correlation between predictors using R
+```{r}
+splits <- initial_split(ames_tbl, prop = 0.8)
+
+data_tbl <- ames_tbl %>% 
+    select(Sale_Price, Gr_Liv_Area, Garage_Cars, Bedroom_AbvGr, Year_Built)
+
+splits <- initial_split(data_tbl, prop = 0.8) 
+
+x_train <- training(splits) %>% 
+    select(-Sale_Price)
+
+cor(X_train, method = "pearson") %>% round(2)
+
+```
+# Determine correlation between predictors using Python
+```{python}
+import pandas as pd
+
+x_train = r.x_train
+
+x_train.corr(method = 'pearson').round(2)
+
+```
+
+
