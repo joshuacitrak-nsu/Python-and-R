@@ -1,0 +1,47 @@
+---
+title: "strings with embedded code"
+author: "Matt Rosinski"
+date: "2022-11-27"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{python}
+import time
+
+system_time = time.asctime(time.localtime(time.time()))
+
+print(f'The local time is {system_time}')
+print(f'My favourite emoji:\N{HUGGING FACE} \U0001F61D')
+```
+
+```{python}
+import datetime
+
+system_date = datetime.datetime.now()
+
+print(f'The date today is {system_time:%Y-%m-%d}')
+```
+
+
+```{r}
+library(stringr)
+
+date_format <- scales::label_date(format = "%Y-%m-%d")
+
+system_date = date_format(Sys.time())
+
+str_glue("The date today is {system_date} \U0001F61D")
+
+```
+
+```{r}
+
+holiday = ymd_hms("2022-12-25 00:00:00")
+
+holiday - Sys.time()
+```
+
