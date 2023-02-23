@@ -2,5 +2,8 @@
 .Rhistory
 .RData
 .Ruserdata
-.png
-.gif
+*.png
+*.gif
+*.jpg
+*.jpeg
+*.mov
