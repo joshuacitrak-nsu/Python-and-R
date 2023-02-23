@@ -1,0 +1,61 @@
+---
+title: "most-common"
+format: html
+editor: visual
+---
+
+## Most Common Items in a List
+
+
+```{r}
+a <- c(23, 23, 17, 17, 17, 17, 42, 64, 64, 64, 32, 128, 1, 0)
+counts <- table(a)
+max_index <- which.max(counts)
+most_common <- names(counts)[max_index]
+count <- counts[max_index]
+print(paste(most_common, "occurs", count, "times"))
+
+```
+
+```{r}
+library(tidyverse)
+
+df <- tibble(a = c(23, 23, 17, 17, 17, 17, 42, 64, 64, 64, 32, 128, 1, 0))
+counts <- df %>% count(a, sort = TRUE)
+most_common_item = counts %>% select(a) %>% slice_head(n = 1)
+most_common_item_count = counts %>% select(n) %>% slice_head(n = 1)
+
+print(str_glue("{most_common_item} occurs {most_common_item_count} times"))
+
+```
+
+```{python}
+from collections import Counter
+a = [23, 23, 17, 17, 17, 17, 42, 64, 64, 64, 32, 128, 1, 0]
+
+count = Counter(a)
+
+print(f'{count.most_common(1)[0][0]} occurs {count.most_common(1)[0][1]} times')
+
+```
+```{python}
+import pandas as pd
+
+df = pd.DataFrame({'item':a})
+
+counts = df['item'].value_counts()
+
+most_common_item = counts.idxmax()
+most_common_item_count = counts.max()
+
+print(f'{most_common_item} occurs {most_common_item_count} times')
+```
+The Data Staircase. How to Find the Most Common Things That Work for Data Scientists.  Starting out on your data science learning journey or branching out into a new language can be a little overwhelming.  Especially if you are trying to launch into using machine learning frameworks before learning the basics.  My advice, take a staircase approach.  
+
+
+
+Set a goal of something you want to achieve in the next 3 months and then identify the steps you might need to get there.  ChatGPT can come in handy to give you some ideas and so can course outlines and contents pages in books.
+
+
+
+Then set out to climb that staircase starting from wherever you are at.  Every time you encounter code you don't understand resist the temptation of pressing submit and moving on.  Dwell on that unfamiliar code, compare it with how you might do it in another language, ask ChatGPT for an explanation of that code.  Whatever you do don't ignore that sense of unease you get when something doesn't make sense.

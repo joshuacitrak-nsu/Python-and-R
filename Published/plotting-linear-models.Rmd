@@ -1,0 +1,99 @@
+---
+title: "visualisation"
+author: "Matt Rosinski"
+date: "2022-12-01"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(tidyquant)
+
+data("anscombe")
+
+anscombe %>% glimpse()
+
+anscombe_long_tbl <- anscombe %>% 
+    pivot_longer(contains("x"), 
+                 names_to = "group") %>% 
+    rename(x = value) %>% 
+    select(group, x) %>% 
+    bind_cols(
+        anscombe %>% 
+            pivot_longer(contains("y"), 
+                 names_to = "group") %>% 
+            select(value) %>% 
+            rename(y = value)
+    ) %>% 
+    mutate(group = str_remove(group, '[xy]'))
+
+anscombe_long_tbl %>%  
+    group_by(group) %>% 
+    ggplot(aes(x, y, color = group)) +
+    geom_point(size = 2, alpha = 0.7) +
+    facet_wrap(~group, scales = "free") +
+    geom_smooth(method = "lm", se = FALSE, color = "black", size = 0.5) +
+    labs(title = "Linear model fit to Anscombe's quartet dataset") +
+    theme_tq() +
+    theme(legend.position =  "None") 
+
+```
+
+
+```{r}
+linear_fit <- function(df) {
+    
+    fit <- lm(y ~ x, df)
+    
+    rsq <- summary(fit)$r.squared
+    
+    df <- tibble(
+        intercept = fit$coefficients[1],
+        slope = fit$coefficients[2],
+        rsq = rsq
+    )
+}
+
+anscombe_long_tbl %>% 
+    group_by(group) %>% 
+    dplyr::group_split() %>%
+    map_df(., ~ linear_fit(.)) %>% 
+    mutate(group = row_number()) %>% 
+    relocate(group)
+    
+    
+```
+
+```{python}
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+anscombe = sns.load_dataset("anscombe")
+
+anscombe.head()
+
+sns.set_theme(style='whitegrid', font_scale=1.25, palette='deep')
+
+anscombe_plot = sns.lmplot(data = anscombe,
+                            x = 'x',
+                            y = 'y',
+                            col = 'dataset', 
+                            hue = 'dataset',
+                            ci = None,
+                            col_wrap = 2,
+                            facet_kws=dict(sharex = False, sharey = False)
+                            )
+fig = plt.gcf()
+
+fig.suptitle("Linear fit to Anscombe's quartet dataset")
+
+anscombe_plot.savefig("data/anscombe_lm_plot.png")
+
+anscombe_plot
+
+```
+

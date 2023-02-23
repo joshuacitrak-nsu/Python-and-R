@@ -13,3 +13,7 @@ RnwWeave: Sweave
 LaTeX: pdfLaTeX
 
 StripTrailingWhitespace: Yes
+
+PythonType: conda
+PythonVersion: 3.10.8
+PythonPath: C:/Users/mattr/mambaforge/envs/tensorflow/python.exe

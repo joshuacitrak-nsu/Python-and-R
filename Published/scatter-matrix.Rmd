@@ -1,0 +1,103 @@
+---
+title: "scatter matrix"
+author: "Matt Rosinski"
+date: "2022-12-04"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{python}
+import pandas as pd
+import numpy as np
+from pandas.plotting import scatter_matrix
+
+```
+
+# Read in dataset
+```{python}
+df = pd.read_csv('https://www.fueleconomy.gov/feg/epadata/vehicles.csv')
+
+df.head()
+
+df.info()
+
+df.to_csv('data/vehicles.csv')
+
+```
+
+```{python}
+# Get 6 most common classes
+counts = df['VClass'].value_counts()
+car_class = counts.index.tolist()[0:6]
+car_class
+
+```
+
+# Filter dataframe down to manageable size
+```{python}
+car_class_df = (df[['cylinders', 'fuelCost08', 'co2', 'VClass', 'displ']]
+                .query('VClass in @car_class'))
+
+car_class_df.head()
+
+car_class_df.shape
+
+matrix_plot = scatter_matrix(car_class_df, figsize=(10,10), alpha = 0.5)
+
+# See notebook for scatter matrix output - not rendered in RMarkdown
+
+```
+
+```{r}
+library(tidyverse)
+library(GGally)
+
+df = read_csv("data/vehicles.csv", show_col_types = FALSE)
+
+df %>% glimpse()
+
+# Get 6 most common classes
+count_class <- df %>% count(VClass, sort = TRUE)
+car_class <- count_class %>%  slice_head(n = 6) %>% pull(VClass)
+car_class
+
+car_class_df <- df %>% 
+    filter(VClass %in% car_class & (year >= 2015)) %>% 
+    mutate(transmission = case_when(
+        str_detect(str_to_lower(trany), "manual") ~ "Manual",
+        str_detect(str_to_lower(trany), "auto") ~ "Automatic",
+        TRUE ~ "Other")) %>% 
+    select(transmission, cylinders, fuelCost08, co2, VClass, displ)
+
+car_class_df %>% slice_head(n = 5)
+
+dim(car_class_df)
+
+ggpairs(data = car_class_df %>% select(-c(VClass, transmission)), 
+        # mapping = aes_string(color = "transmission"),
+        # lower = "blank",
+        # legend = 1,
+        diag = list(continuous = wrap("densityDiag", alpha = 0.3)),
+        progress = FALSE, 
+        title = "US Vehicle Fuel Economy Relationships (MFG YR 2015-22)") +
+        # theme(legend.position = "bottom") +
+        theme_tq()
+
+ggpairs(data = car_class_df %>% select(-c(VClass, fuelCost08, cylinders)),
+        mapping = aes_string(color = "transmission"),
+        # lower = "blank",
+        legend = 1,
+        diag = list(continuous = wrap("densityDiag", alpha = 0.3)),
+        progress = FALSE, 
+        title = "US Vehicle CO2 Relationships (MFG YR 2015-22)") +
+        theme(legend.position = "bottom") +
+        theme_tq()
+
+
+
+
+```
+

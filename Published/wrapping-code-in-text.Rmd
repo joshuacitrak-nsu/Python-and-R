@@ -1,0 +1,40 @@
+---
+title: "wrapping code in text"
+author: "Matt Rosinski"
+date: "2022-11-27"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{python}
+import datetime
+
+# Get the current system date
+current_date = datetime.datetime.now()
+
+# Format the date as a string in the year-month-day format
+formatted_date = current_date.strftime("%Y-%m-%d")
+
+# Print the formatted date with a hugging face emoji at the end
+print(f'The current date is {formatted_date} \U0001F917')
+
+```
+
+
+```{r}
+library(stringr)
+library(scales)
+
+date_format <- label_date(format = "%Y-%m-%d")
+
+formatted_date = date_format(Sys.time()) 
+
+str_glue("The current date is {system_date} \U0001F917")
+
+```
+
+
