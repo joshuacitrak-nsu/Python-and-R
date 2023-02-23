@@ -39,11 +39,13 @@ ames_tbl %>%
     mutate(grp_max = max(correlation)) %>% 
     ungroup() %>% 
     arrange(desc(grp_max)) %>% 
-    slice_head(n = 100) %>%
+    slice_head(n = 200) %>%
     select(-grp_max) %>% 
     
     # plot correlation funnel
-    plot_correlation_funnel(interactive = TRUE)
+    plot_correlation_funnel(interactive = FALSE, 
+                            limits = c(-.5,.5)) +
+        theme(axis.text.y = element_blank())
 ```
 
 # Determine correlation between predictors using R

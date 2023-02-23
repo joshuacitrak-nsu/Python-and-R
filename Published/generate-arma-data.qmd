@@ -1,0 +1,59 @@
+---
+title: "Create ARMA  data"
+format: html
+editor: visual
+---
+
+## Create ARMA data
+
+```{python}
+# Imports
+import numpy as np
+import matplotlib.pyplot as plt
+from statsmodels.tsa.arima_process import arma_generate_sample
+np.random.seed(2)
+
+# Coefficients
+ar_coefs = [1]
+ma_coefs = [1]
+
+# Generate ARMA data
+y = arma_generate_sample(ar_coefs, ma_coefs, nsample=100, scale=0.5)
+
+y = np.cumsum(y) + 20
+
+plt.clf()
+plt.plot(y)
+plt.ylabel(r'$y_t$')
+plt.xlabel(r'$t$')
+plt.title("Random Walk Time Series Data Generated Using Python")
+plt.show()
+```
+
+## Generate ARMA data with R
+
+```{r}
+library(ggplot2)
+library(tidyverse)
+
+set.seed(2)
+# Generate ARMA data using base R
+y <- arima.sim(model = list(order = c(0, 1, 0)), 
+               n = 100, 
+               sd = 0.5) + 20
+
+m <- length(y)
+ 
+y_df <- data.frame(time = 1:m, y = y)
+
+ggplot(y_df, aes(x = time, y = y)) + 
+    geom_line() + 
+    labs(
+        title = "Random Walk Time Series Data Generated Using R",
+        x = "Time",
+        y = "y"
+    ) +
+    scale_y_continuous() +
+    theme_minimal()
+
+```

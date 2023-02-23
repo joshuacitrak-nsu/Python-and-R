@@ -1,0 +1,39 @@
+---
+title: "conditional data processing"
+format: html
+editor: visual
+---
+
+## Perform operations on a column conditional on the value of other columns
+
+```{python}
+import pandas as pd
+
+# Create a sample DataFrame
+df = pd.DataFrame({
+    'col1': [1, 2, 3, 4],
+    'col2': ['apple', 'banana', 'cherry', 'date']
+})
+
+# Use a lambda function to create a new column based on the values of multiple columns
+df['col3'] = df.apply(lambda row: row['col1']*200 if row['col2'] == 'apple' else row['col1'], axis=1)
+
+# Show the resulting DataFrame
+print(df)
+
+```
+
+```{r}
+library(tidyverse)
+
+# Create a sample data frame
+df <- data.frame(col1 = c(1, 2, 3, 4),
+                 col2 = c('apple', 'banana', 'cherry', 'date'))
+
+# Use mutate to create a new column based on the values of multiple columns
+df <- df %>% mutate(col3 = ifelse(col2 == 'apple', col1*200, col1))
+
+# Show the resulting data frame
+df
+
+```

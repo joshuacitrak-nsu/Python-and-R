@@ -1,0 +1,74 @@
+---
+title: "working with big data"
+format: html
+editor: visual
+---
+
+```{r}
+library(data.table)
+library(bikeshare14)
+library(tictoc)
+```
+
+```{r}
+batrips_dt <- as.data.table(batrips)
+head(batrips_dt)
+```
+
+```{r}
+tic()
+# Filter all rows where duration is between [5000, 6000]
+duration_5k_6k <- batrips_dt[duration %between% c(5000, 6000)]
+duration_5k_6k
+toc()
+```
+
+```{r}
+library(tidyverse)
+tic()
+batrips %>% 
+    filter(str_ends(end_station, "Market"))
+toc()
+```
+
+```{r}
+ryland_park_subscribers <- batrips[start_station == "Ryland Park" & subscription_type != "Customer"]
+ryland_park_subscribers
+```
+
+```{r}
+tic()
+# Filter all rows where end_station ends with "Market" 
+end_markets <- batrips[end_station %like% "Market$"]
+end_markets
+toc()
+```
+
+```{r}
+tic()
+library(dplyr)
+library(stringr)
+
+batrips %>% 
+  filter(str_ends(end_station, "Market"))
+toc()
+```
+
+```{python}
+
+import modin.pandas as pd
+```
+
+```{r}
+tic()
+batrips_dt[, c("is_dur_gt_1hour", "week_day") := list(duration > 3600, wday(start_date))]
+toc()
+```
+
+```{r}
+tic()
+batrips <- batrips %>% 
+    mutate(is_dur_gt_1hour = duration > 3600,
+           week_day = wday(start_date))
+toc()
+```
