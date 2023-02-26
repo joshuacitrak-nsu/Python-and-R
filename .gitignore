@@ -9,3 +9,5 @@
 *.mov
 *.csv
 *.xlsx
+.env_test
+.ipynb_checkpoints
