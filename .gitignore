@@ -11,3 +11,5 @@
 *.xlsx
 .env_test
 .ipynb_checkpoints
+*.pkl
+*.pdf
