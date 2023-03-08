@@ -42,6 +42,7 @@ use_condaenv("py3.8", required = TRUE)
 py_config()
 
 ```
+
 ```{python}
 # Is python working?
 

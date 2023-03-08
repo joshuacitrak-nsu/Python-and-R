@@ -1,0 +1,469 @@
+---
+title: "object attributes"
+author: "Matt Rosinski"
+date: "2023-03-05"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(dplyr)
+
+dplyr_ns <- getNamespace("dplyr")
+
+ls(dplyr_ns)
+
+length(dplyr_ns)
+
+a <- "abcd"
+
+str(a)
+
+typeof(a)
+
+
+
+```
+
+```{python}
+
+import pandas as pd
+
+import os
+
+os.sep
+
+os.sep = '/'
+
+os.sep
+
+
+dir(pd)
+
+type(int)
+
+type(type)
+
+str(123)
+
+type(list('abcd'))
+
+a = 'abcd' # identifier = name = variable or function
+  # search is LEGB (local, enclosing, global, built-in)
+  
+dir(a)
+
+dir(a.strip())
+
+dir(a.strip().islower())
+
+```
+```{python}
+mylist = [10, 20, 30]
+sum(mylist)  # sum is a function, takes a list as an argument
+
+mylist.sum()
+
+mylist.pop()
+
+mylist
+
+# Ruby doesn't have functions separate to methods
+
+len(mylist)
+
+mylist.__len__()
+
+# Rather than write methods with the same name on many objects
+# Some general functions were written that apply on many objects
+# Use methods first and functions only when the methods are not available
+
+help(list)
+
+dir(mylist)
+
+dir(list)
+
+```
+```{python}
+
+# Foo inherits from object
+class Foo(object):
+    pass
+
+type(Foo)
+
+# Using the Foo class to create a Foo object
+# f is an instance of Foo
+f = Foo()
+
+type(f)
+
+dir(Foo)
+
+dir(f)
+```
+```{python}
+
+f = Foo()
+
+# vars()  # globals()
+# def bar():
+#     vars() # locals()
+    
+# dictionary
+vars(f)
+
+f.x = 100
+f.y = [10, 20, 30]
+
+dir(f)
+
+vars(f)
+
+g = Foo()
+
+dir(g)
+vars(g)
+
+g.a = {'a':1, 'b':2, 'c':3}
+g.b = {10, 20, 30, 40, 50}
+
+vars(g)
+
+vars(f)
+```
+
+```{python}
+
+class Foo(object):
+    def __init__(self):
+        self.x = 100
+        self.y = [10, 20, 30]
+
+f = Foo()
+
+vars(f)
+
+dir(f.y)
+
+f.x = {10, 20, 30}
+dir(f.x)
+
+vars(f)
+
+f.y.pop()
+f.x.pop()
+
+vars(f)
+
+f.x.pop()
+
+vars(f)
+
+f.y.append(40)
+
+vars(f)
+
+dir(f.x)
+
+f.x.add(99)
+
+vars(f)
+
+```
+```{python}
+
+class Foo(object):
+    def __init__(self, x=99, y=66, *args):
+        self.x = x
+        self.y = y
+        self.args = args
+
+f = Foo([10, 20 ,30], [100, 200, 300], "two", 3)
+
+g = Foo()
+
+vars(f)
+
+vars(g)
+
+```
+
+```{python}
+
+computers = [{'brand':'Apple', 'year':2014},
+            {'brand':'HP', 'year':2016},
+            {'brand':'Lenovo', 'year':2016},
+            {'brand':'Apple', 'year':2010}]
+    
+computers        
+            
+```
+
+```{python}
+for one_computer in computers:
+    print(f"{one_computer['brand']}, from {one_computer['year']}")
+    
+```
+
+```{python}
+for one_computer in computers:
+    if one_computer['year'] == 2016:
+            print(f"{one_computer['brand']}, from {one_computer['year']}")
+
+```
+
+```{python}
+class Computer(object):
+    def __init__(self, brand, year):
+        self.brand = brand
+        self.year = year
+
+c1 = Computer('Apple', 2014)
+c2 = Computer('HP', 2016)
+c3 = Computer('Lenovo', 2016)
+c4 = Computer('Apple', 2010)
+```
+
+```{python}
+my_computers = [c1, c2, c3, c4]
+
+# for one_computer in my_computers:
+#     print(f"{one_computer.brand}, from {one_computer.year}")
+
+[print(f"{one_computer.brand}, from {one_computer.year}") for one_computer in my_computers]
+
+```
+
+```{python}
+
+class Scoop():
+    def __init__(self, flavour):
+        self.flavour = flavour
+
+s1 = Scoop(flavour="chocolate")
+
+s1.flavour
+vars(s1)
+
+s2 = Scoop("vanilla")
+s3 = Scoop("coffee")
+
+for one_scoop in [s1, s2, s3]:
+    print(one_scoop.flavour)
+
+```
+
+```{python}
+
+class Person():
+    def __init__(self, name, email, phone):
+        self.name = name
+        self.email = email
+        self.phone = phone
+
+p1 = Person("Mark", "mark@yahoo.com", "442-234-4323")
+
+vars(p1)
+
+p2 = Person("Heidi", "heidi@hotmail.com", "596-345-6474")
+
+p3 = Person("Matt", "matt@xycd.com", "353-356-9965")
+
+[person.name for person in [p1, p2, p3]]
+
+[vars(each) for each in [p1, p2, p3]]
+
+
+for each in [p1, p2, p3]:
+    print(each.name)
+
+```
+
+```{python}
+
+class BankAccount(object):
+    def __init__(self):
+        self.transaction = []
+
+b1 = BankAccount()
+
+vars(b1)
+
+b1.transaction.append(-100)
+
+b1.transaction.append(20)
+b1.transaction.append(234)
+
+
+# Balance
+sum(b1.transaction)
+
+# Number of transactions
+len(b1.transaction)
+
+# Average transaction
+sum(b1.transaction)/len(b1.transaction)
+
+
+
+```
+
+```{python}
+class Foo:
+    def __init__(self, x):
+        self.x = x
+    
+    def x2(self):
+        return self.x * 2
+    # Not pythonic
+    # def get_x(self):        # getter or accessor
+    #     return self.x
+    # 
+    # def set_x(self, new_x):  # setter or mutator
+    #     self.x = new_x
+
+f1 = Foo(2)
+
+f1.x2()
+
+f2 = Foo(4)
+vars(f2)
+f2.x2()
+
+# No need to use getters and setters in Python because we can get attributes with this:
+f1.x
+# and set attributes like so:
+f1.x = 40
+
+f1.x
+
+```
+```{python}
+class Book(object):
+    def __init__(self, title, author, price=30):
+        self.title = title
+        self.author = author
+        self.price = price
+    
+    def nice_author_name(self):
+        return ', '.join(reversed(self.author.split()))
+    
+    def price_with_tax(self):
+        return self.price * 1.15
+
+b1 = Book('Title1', 'John Smith')
+b2 = Book('Title2', 'David Cohen')
+b3 = Book('Title', 'Doug Trainer', 25)
+
+
+```
+
+```{python}
+b1.price
+
+b2.price
+
+b3.price
+
+b3.author
+
+b3.nice_author_name()
+
+b3.price_with_tax()
+
+```
+
+```{python}
+# has-a relationship -- composition
+# Bookshelf has-a book
+
+class Bookshelf(object):
+    def __init__(self):
+        self.books = []
+        
+    def add_books(self, *args):
+        self.books += args
+        
+    def total_price(self):
+        return sum([one_book.price 
+                for one_book in shelf.books])
+
+shelf = Bookshelf()
+shelf.add_books(b1, b2, b3)
+```
+
+```{python}
+shelf.books
+
+shelf.books[0].author
+
+sum([one_book.price for one_book in shelf.books])
+
+shelf.total_price()
+
+```
+
+```{r}
+
+library(R6)
+
+# Define Book class
+Book <- R6Class("Book",
+  public = list(
+    title = NULL,
+    author = NULL,
+    price = 30,
+    initialize = function(title, author, price = 30) {
+      self$title <- title
+      self$author <- author
+      self$price <- price
+    },
+    
+    nice_author_name = function() {
+      return(paste(rev(strsplit(self$author, " ")[[1]]), collapse = ", "))
+    },
+    
+    price_with_tax = function() {
+      return(self$price * 1.15)
+    }
+  )
+)
+
+# Define Bookshelf class
+Bookshelf <- R6Class("Bookshelf",
+  public = list(
+    books = NULL,
+    initialize = function() {
+      self$books <- list()
+    },
+    
+    add_books = function(...) {
+      self$books <- c(self$books, list(...))
+    },
+    
+    total_price = function() {
+      return(sum(sapply(self$books, function(one_book) one_book$price)))
+    }
+  )
+)
+
+# Create some books and a bookshelf
+book1 <- Book$new("The Great Gatsby", "F. Scott Fitzgerald", 20)
+book2 <- Book$new("To Kill a Mockingbird", "Harper Lee", 25)
+bookshelf <- Bookshelf$new()
+
+# Add books to the bookshelf
+bookshelf$add_books(book1)
+bookshelf$add_books(book2)
+
+# Get the total price of the books on the bookshelf
+bookshelf$total_price()
+
+
+```
+

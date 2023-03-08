@@ -1,0 +1,75 @@
+---
+title: "Apply functions to every column"
+author: "Matt Rosinski"
+date: "2023-02-20"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Using Base R
+```{r}
+set.seed(2023)
+x <- data.frame(matrix(runif(5 * 1e4), ncol = 5))
+
+head(x)
+
+medians <- vapply(x, median, numeric(1))
+
+for (i in seq_along(medians)) {
+    x[[i]] <- x[[i]] - medians[[i]]
+}
+
+head(x)
+```
+
+# In dplyr
+```{r}
+library(dplyr)
+set.seed(2023)
+x <- data.frame(matrix(runif(5 * 1e4), ncol = 5))
+head(x)
+
+# Subtract column medians from every value
+x <- x %>% mutate(across(everything(), ~ . - median(.)))
+head(x)
+
+# Verify that the median of each column is zero
+x %>% summarise(across(everything(), median))
+
+```
+
+```{python}
+import pandas as pd
+import numpy as np
+
+# Create a DataFrame with 5 columns and 50,000 rows of random uniform values
+x = pd.DataFrame(np.random.uniform(size=(50000, 5)))
+
+x.head()
+
+```
+
+```{python}
+import pandas as pd
+# Import the data from the R environment for comparison
+x = r.x
+
+# Subtract column medians from every value
+x_centred = x.apply(lambda col: col - col.median())
+x_centred.head()
+
+# Note: We can achieve the same result without using lambda but using lambda
+# generalises to other functions
+x_centred = x - x.median(axis=0)
+x_centred.head()
+
+
+# Verify the median of each column is now zero
+x_medians = x_centred.median()
+x_medians.head()
+
+```
+
