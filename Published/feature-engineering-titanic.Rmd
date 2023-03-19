@@ -19,9 +19,9 @@ import os
 ```
 
 ```{python}
-creds = '{"username":"mattrosinski","key":"854b2b30867c7f2bec7df48f5775021e"}'
 
 cred_path = Path('~/.kaggle/kaggle.json').expanduser()
+
 if not cred_path.exists():
     cred_path.parent.mkdir(exist_ok=True)
     cred_path.write_text(creds)

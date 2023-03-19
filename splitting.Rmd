@@ -25,6 +25,8 @@ age.info()
     .mean(axis = 'columns'))
 
 ```
+
+
 ```{python}
 import pandas as pd
 

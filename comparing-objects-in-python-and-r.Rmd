@@ -239,6 +239,8 @@ my_computers = [c1, c2, c3, c4]
 
 ```
 
+# Ice-cream objects
+
 ```{python}
 
 class Scoop():
@@ -257,15 +259,84 @@ for one_scoop in [s1, s2, s3]:
     print(one_scoop.flavour)
 
 ```
+```{python}
+class Bowl(object):
+    total_scoops = 0
+    
+    def __init__(self):
+        self.scoops = []
+    
+    # Set maximum number of scoops in a bowl
+    def add_scoops(self, *args):
+        if Bowl.total_scoops >= 3:
+            return
+        else:
+            Bowl.total_scoops += 1
+            self.scoops += args
+    
+    def flavours(self):
+        return ', '.join([scoop.flavour for scoop in self.scoops])
+
+b1 = Bowl()
+
+vars(b1)
+
+b1.add_scoops(s1)
+b1.add_scoops(s2)
+b1.add_scoops(s3)
+
+b1.total_scoops
+
+b1.add_scoops(s1)
+
+b1.total_scoops
+
+b1.scoops[0].flavour
+b1.scoops[1].flavour
+
+b1.flavours()
+```
+## Bank Account objects
 
 ```{python}
 
-class Person():
+class Person(object):
     def __init__(self, name, email, phone):
         self.name = name
         self.email = email
         self.phone = phone
+        self.account = []
+    
+    def add_account(self, *args):
+        self.account += args
+    
+    def all_balances(self, *args):
+        return [sum(account.transactions) for account in self.account]
+    
+    def current_total_balance(self):
+        return sum([sum(account.transactions) for account in self.account])
+    # 
+    def average_transaction_amount(self):
+    #     all_transactions = [one_transaction for one_account in self.account
+    #                         for one_transaction in one_account.transactions]
+        all_transactions = []
+        for one_account in self.account:
+            for one_transaction in one_account.transactions:
+                all_transactions.append(one_transaction)
 
+        print(all_transactions)
+        return sum(all_transactions) / len(all_transactions)
+                            
+class BankAccount(object):
+    def __init__(self):
+        self.transactions = []
+    
+    def transaction(self, value):
+        self.transactions.append(value)
+        
+
+
+# Create people records
 p1 = Person("Mark", "mark@yahoo.com", "442-234-4323")
 
 vars(p1)
@@ -274,13 +345,41 @@ p2 = Person("Heidi", "heidi@hotmail.com", "596-345-6474")
 
 p3 = Person("Matt", "matt@xycd.com", "353-356-9965")
 
-[person.name for person in [p1, p2, p3]]
+# Create accounts and attached to people records
+b1 = BankAccount()
+p1.add_account(b1)
+b1.transaction(-100)
+b1.transaction(20)
+b1.transaction(234)
 
-[vars(each) for each in [p1, p2, p3]]
+b2 = BankAccount()
+p1.add_account(b2)
+b2.transaction(10)
+b2.transaction(20)
+b2.transaction(30)
+b2.transaction(1)
+
+b3 = BankAccount()
+p2.add_account(b3)
+b3.transaction(1)
+b3.transaction(2)
+b3.transaction(3)
+b3.transaction(10)
+
+b1.transactions
+b2.transactions
+b3.transactions
+
+p1.all_balances()
+p1.current_total_balance()
+
+p2.all_balances()
+p2.current_total_balance()
+
+p1.average_transaction_amount()
 
 
-for each in [p1, p2, p3]:
-    print(each.name)
+sum([-100, 20, 234, 10, 20, 30, 1])/len([-100, 20, 234, 10, 20, 30, 1])
 
 ```
 
@@ -288,16 +387,17 @@ for each in [p1, p2, p3]:
 
 class BankAccount(object):
     def __init__(self):
-        self.transaction = []
-
+        self.transactions = []
+        
+        
 b1 = BankAccount()
 
 vars(b1)
 
-b1.transaction.append(-100)
+b1.transactions.append(-100)
 
-b1.transaction.append(20)
-b1.transaction.append(234)
+b1.transactions.append(20)
+b1.transactions.append(234)
 
 
 # Balance
@@ -312,6 +412,8 @@ sum(b1.transaction)/len(b1.transaction)
 
 
 ```
+
+## Foo objects
 
 ```{python}
 class Foo:
@@ -343,6 +445,8 @@ f1.x = 40
 f1.x
 
 ```
+
+## Bookstore objects
 ```{python}
 class Book(object):
     def __init__(self, title, author, price=30):
@@ -408,6 +512,118 @@ shelf.total_price()
 
 ```
 
+## Shopping cart objects
+```{python}
+class ShoppingCart:
+    def __init__(self):
+        self.items = {}
+            
+    # Methods using tuples
+    def add_r(self, name, price, new_quantity):
+        if name in self.items:
+            price, previous_quantity = self.items[name]
+            self.items[name] = (price, previous_quantity + new_quantity)
+        else:
+            self.items[name] = (price, new_quantity)
+    
+    def remove_r(self, name):
+        if name in self.items:
+            price, quantity = self.items[name]
+            if quantity == 1:
+                self(self.items[name])
+            else:
+                self.items[name] = (price, quantity - 1)
+    
+    def view_cart_r(self):
+        for item, (price, quantity) in self.items.items():
+            item_total = price * quantity
+            print(f'{item:<10s} {quantity:<5d} x {price:>6.2f} = {item_total:>7.2f}')
+    
+    
+    def total_r(self):
+        return sum([price * quantity for price, quantity in self.items.values()])
+    
+    # Methods not using tuples 
+    def add(self, name, price, quantity):
+        if name in self.items:
+            self.items[name]['quantity'] += quantity
+        else:
+            self.items[name] = {'quantity': quantity, 'price': price}
+    
+    def remove(self, name):
+        if name in self.items:
+            if self.items[name]['quantity'] == 1:
+                del self.items[name]
+            elif self.items[name]['quantity'] > 1:
+                self.items[name]['quantity'] -= 1
+    
+    def view_cart(self):
+        for item in self.items:
+            item_quantity = self.items[item]['quantity']
+            item_price = self.items[item]['price']
+            item_total = item_quantity * item_price
+            print(f'{item:<10s} {item_quantity:<5d} x {item_price:>6.2f} = {item_total:>7.2f}')
+    
+    def total(self):
+        totals = []
+        for item in self.items:
+            totals.append(self.items[item]['price'] * self.items[item]['quantity'])
+        print(f'Total Due: ${sum(totals)}')
+
+
+sc = ShoppingCart()
+
+sc.add_r('book', 30, 1)
+sc.add_r('toothbrush', 3.30, 4)
+sc.add_r('toothbrush', 3.30, 4)
+sc.total_r()
+
+sc.remove_r('toothbrush')
+sc.total_r()
+sc.remove_r('toothbrush')
+sc.total_r()
+
+sc.view_cart_r()
+
+
+sc.add('book', 30, 1) # name, price-per-unit, quantity
+sc.add('toothbrush', 3.30, 4)
+
+sc.view_cart()
+
+sc.remove('toothbrush')  #removes one toothbrush or item altogether
+
+sc.view_cart()
+
+```
+
+
+```{python}
+sc.add('baked beans', 2.20, 10)
+
+sc.total()
+
+```
+
+```{python}
+
+class Person:
+    population = 0  # Class attribute
+    
+    def __init__(self, name):
+        self.name = name
+        Person.population += 1
+
+p1 = Person("Max")
+p2 = Person("Simon")
+p2.name
+
+p1.population
+p2.population
+```
+
+
+## R6 class objects
 ```{r}
 
 library(R6)

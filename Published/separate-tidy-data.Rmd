@@ -1,0 +1,141 @@
+---
+title: "separate character strings"
+author: "Matt Rosinski"
+date: "2023-03-11"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+# Separate messy text into separate columns
+(df <- tribble(
+    ~messy_text,~values,
+    # __________|________
+    "new_sp_m014", 23,
+    "new_sp_f014", 2,
+    "new_sp_m65" , 65,
+    "new_sp_f1530_22342", 42,
+    "new_sp", 6
+))
+df %>% separate(messy_text, c("var", "sep", "genderage"))
+```
+
+
+
+
+
+
+
+
+```{r}
+
+library(tidyverse)
+library(tidyr)
+
+who %>%  glimpse()
+
+who %>% 
+    pivot_longer(
+        cols = new_sp_m014:newrel_f65,
+        names_to = "key",
+        values_to = "cases",
+        values_drop_na = TRUE
+    ) %>% 
+    mutate(key = stringr::str_replace(key, "newrel", "new_rel") ) %>% 
+    separate(key, c("new", "var", "sexage")) %>% 
+    select(-new, -iso2, -iso3) %>% 
+    separate(sexage, c("sex", "age"), sep = 1) %>% 
+    separate(age, c("lower_age", "upper_age"), sep = -2) %>% 
+    mutate(lower_age = ifelse(lower_age == "", 65, as.numeric(lower_age))) %>% 
+    mutate(mean_age = (lower_age + as.numeric(upper_age))/2)
+
+
+```
+```{python}
+import pandas as pd
+
+
+d1 = pd.DataFrame({'variable' : ['new_sp_m014']})
+print(d1)
+
+d1[['new', 'var', 'sexage']] = d1['variable'].str.split('_', n=2, expand=True)
+d1.drop(['new', 'variable'], axis=1, inplace=True)
+d1
+
+d2 = pd.DataFrame({'age': ['014', '65', '1535']})
+
+d2['lower_age'] = d2['age'].str[:-2].fillna(65)
+d2['upper_age'] = d2['age'].str[-2:]
+d2['lower_age'] = d2['lower_age'].apply(lambda x: 65 if x == '' else x)
+d2[['lower_age', 'upper_age']] = d2[['lower_age', 'upper_age']].astype(int)
+d2
+
+
+```
+
+
+```{python}
+import pandas as pd
+import numpy as np
+import re
+
+who = r.who
+
+id_vars = ['iso2', 'iso3', 'country', 'year']
+cols_to_melt = [col for col in who.columns if col not in id_vars]
+who_melted = pd.melt(who, 
+                    id_vars=id_vars, 
+                    value_vars=cols_to_melt, 
+                    var_name='variable', 
+                    value_name='value')
+
+who_tidy = who_melted.dropna(subset=['value'])
+who_tidy.loc[:, 'variable'] = who_tidy['variable'].str.replace('newrel', 'new_rel')
+who_tidy[['new', 'var', 'sexage']] = who_tidy['variable'].str.split('_', n=2, expand=True)
+who_tidy = who_tidy.drop(['new', 'variable', 'iso2', 'iso3'], axis=1)
+who_tidy[['sex', 'age']] = who_tidy['sexage'].str.extract('([a-z]+)(\d+)', expand=True)
+who_tidy['lower_age'] = who_tidy['age'].str[:-2].fillna(65)
+who_tidy['upper_age'] = who_tidy['age'].str[-2:]
+who_tidy['lower_age'] = who_tidy['lower_age'].apply(lambda x: 65 if x == '' else x)
+who_tidy[['lower_age', 'upper_age']] = who_tidy[['lower_age', 'upper_age']].astype(int)
+who_tidy['mean_age'] = (who_tidy['lower_age'] + who_tidy['upper_age'].astype(int))/2
+
+who_tidy = who_tidy.drop(['sexage', 'age'], axis=1)
+who_tidy = who_tidy.reset_index(drop=True)
+
+print(who_tidy.head())
+```
+
+
+```{python}
+
+who_tidy = (
+    pd.melt(who, 
+            id_vars=['iso2', 'iso3', 'country', 'year'], 
+            var_name='variable', 
+            value_name='value')
+    .dropna(subset=['value'])
+    .assign(variable=lambda x: x['variable'].str.replace('newrel', 'new_rel'))
+    .assign(new=lambda x: x['variable'].str.split('_', n=2, expand=True)[0])
+    .assign(var=lambda x: x['variable'].str.split('_', n=2, expand=True)[1])
+    .assign(sexage=lambda x: x['variable'].str.split('_', n=2, expand=True)[2])
+    .drop(['new', 'variable', 'iso2', 'iso3'], axis=1)
+    .assign(sex=lambda x: x['sexage'].str.extract('([a-z]+)', expand=True))
+    .assign(age=lambda x: x['sexage'].str.extract('(\d+)', expand=True))
+    .assign(lower_age=lambda x: x['age'].str[:-2].fillna(65))
+    .assign(upper_age=lambda x: x['age'].str[-2:])
+    .assign(lower_age=lambda x: x['lower_age'].apply(lambda y: 65 \
+            if y == '' else y).astype(int))
+    .assign(upper_age=lambda x: x['upper_age'].astype(int))
+    .assign(mean_age=lambda x: (x['lower_age'] + x['upper_age']) / 2)
+    .drop(['sexage', 'age'], axis=1)
+    .reset_index(drop=True)
+)
+
+print(who_tidy.head())
+```
+

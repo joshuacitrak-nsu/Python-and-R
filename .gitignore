@@ -13,3 +13,4 @@
 .ipynb_checkpoints
 *.pkl
 *.pdf
+.httr-oauth

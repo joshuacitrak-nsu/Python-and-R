@@ -1,0 +1,182 @@
+---
+title: "data table"
+author: "Matt Rosinski"
+date: "2023-03-16"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(data.table)
+
+?rbindlist()
+
+# default case
+DT1 = data.table(A=1:3,B=letters[1:3])
+DT2 = data.table(A=4:5,B=letters[4:5])
+l = list(DT1,DT2)
+rbindlist(l)
+
+
+# bind correctly by names
+DT1 = data.table(A=1:3,B=letters[1:3])
+DT2 = data.table(B=letters[4:5],A=4:5)
+l = list(DT1,DT2)
+rbindlist(l, use.names=TRUE)
+
+# fill missing columns, and match by col names
+DT1 = data.table(A=1:3,B=letters[1:3])
+DT2 = data.table(B=letters[4:5],C=factor(1:2))
+l = list(DT1,DT2)
+l
+
+rbindlist(l, use.names=TRUE, fill=TRUE)
+
+# generate index column, auto generates indices
+rbindlist(l, use.names=TRUE, fill=TRUE, idcol=TRUE)
+# let's name the list
+setattr(l, 'names', c("a", "b"))
+
+l
+rbindlist(l, use.names=TRUE, fill=TRUE, idcol="ID")
+```
+```{r}
+?fsetdiff()
+
+x = data.table(c(1,2,2,2,3,4,4))
+x2 = data.table(c(1,2,3,4)) # same set of rows as x
+y = data.table(c(2,3,4,4,4,5))
+```
+
+```{r}
+x
+x2
+y
+
+```
+# Concatenating data.tables
+```{r}
+# Concatenate case numbers from weeks 50 and 51
+rbind(ebola_W50, ebola_W51)
+
+# Concatenate case numbers from all three weeks
+rbind(ebola_W50, ebola_W51, ebola_W52)
+
+# Modify the code
+rbind(ebola_W50, ebola_W51, ebola_W52, fill = TRUE)
+
+# Concatenate its data.tables
+gdp_all_1 <- rbindlist(gdp, use.names = FALSE)
+
+# Concatenate its data.tables
+gdp_all_2 <- rbindlist(gdp, idcol = "continent")
+
+# Run this code to inspect gdp_all_2
+gdp_all_2 <- rbindlist(gdp, idcol = "continent")
+str(gdp_all_2)
+gdp_all_2[95:105]
+
+# Fix the problem
+gdp_all_3 <- rbindlist(gdp, idcol = "continent", use.names = TRUE)
+gdp_all_3
+
+```
+
+
+```{r}
+fintersect(x, y)            # intersect
+fintersect(x, y, all=TRUE)  # intersect all
+
+fsetdiff(x, y)              # except
+fsetdiff(x, y, all=TRUE)    # except all
+
+funion(x, y)                # union
+funion(x, y, all=TRUE)      # union all
+
+fsetequal(x, x2, all=FALSE) # setequal
+fsetequal(x, x2)            # setequal all
+```
+
+# Set Operations
+```{r}
+# Obtain countries in both Asia and Europe
+fintersect(gdp$asia, gdp$europe)
+
+# Concatenate all data tables
+gdp_all <- rbindlist(gdp, use.names = TRUE)
+
+# Find all countries that span multiple continents
+gdp_all[duplicated(gdp_all)]
+
+# Get all countries in either Asia or Europe
+funion(gdp$asia, gdp$europe)
+
+# Concatenate all data tables
+gdp_all <- rbindlist(gdp, use.names = TRUE)
+
+# Print all unique countries
+unique(gdp_all)
+
+# Which countries are in Africa but not considered part of the middle east?
+fsetdiff(gdp$africa, middle_east)
+
+# Which countries are in Asia but not considered part of the middle east?
+fsetdiff(gdp$asia, middle_east)
+
+# Which countries are in Europe but not considered part of the middle east?
+fsetdiff(gdp$europe, middle_east)
+```
+
+# Reshaping data.tables
+```{r}
+# Print gdp_per_capita
+gdp_per_capita
+
+# Reshape gdp_per_capita to the long format
+melt(gdp_per_capita, id.vars = "year")
+
+# Rename the new columns
+melt(gdp_per_capita, id.vars = "year", 
+     variable.name = "country", value.name = "gdp_pc")
+
+# Print ebola_wide
+ebola_wide
+
+# Stack Week_50 and Week_51
+melt(ebola_wide, measure.vars = c("Week_50", "Week_51"), 
+variable.name = "period", value.name = "cases")
+
+
+# Modify the code
+melt(ebola_wide, measure.vars = c("Week_50", "Week_51"), 
+     variable.name = "period", value.name = "cases", 
+     id.vars = "Location")
+```
+
+# Casting long table to wide
+```{r}
+
+# Split the gdp and population columns by year
+dcast(gdp_oceania, formula = country ~ year, value.var = c("gdp", "population"))
+
+# Reshape from wide to long format
+wide <- dcast(gdp_oceania, formula = country ~ year, value.var = c("gdp", "population"))
+
+# convert to a matrix
+as.matrix(wide, rownames = "country")
+
+# Modify your previous code
+dcast(gdp_oceania, formula = country + continent ~ year, value.var = c("gdp", "population"))
+
+# Split gdp by industry and year
+gdp_by_industry_oceania
+
+dcast(gdp_by_industry_oceania, formula = country ~ industry + year, value.var = "gdp")
+
+
+
+```
+

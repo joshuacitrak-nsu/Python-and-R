@@ -1,0 +1,345 @@
+---
+title: "bayesian regression modeling"
+author: "Matt Rosinski"
+date: "2023-03-17"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+# Future exploration - Youtube API
+```{r}
+# https://github.com/soodoku/tuber
+
+```
+
+
+# Spotifyr Documentation
+```{r}
+# devtools::install_github('charlie86/spotifyr')
+
+# Documentation
+# https://www.rcharlie.com/spotifyr/
+
+```
+
+# Spotifyr documentation
+https://www.rdocumentation.org/packages/spotifyr/versions/2.2.4
+
+```{r}
+library(tidyverse)
+library(spotifyr)
+library(rstanarm)
+library(tidybayes)
+library(broom)
+library(broom.mixed)
+```
+
+
+```{r}
+Sys.setenv(SPOTIFY_CLIENT_ID = 'getyourown')
+Sys.setenv(SPOTIFY_CLIENT_SECRET = 'gotospotifywebapi')
+Sys.setenv(SPOTIFY_REDIRECT_URI = "http://localhost:1410/")
+
+access_token <- get_spotify_access_token()
+```
+
+# Find the Spotify ID for an artist
+```{r}
+# Replace this with the name of the artist you are looking for
+search_string <- "Radiohead"
+
+search_results <- search_spotify(
+  q = search_string,
+  type = c("artist"),
+  authorization = get_spotify_access_token()
+)
+
+artist_id <- search_results %>% 
+    arrange(desc(popularity)) %>% 
+    select(id, name, uri, popularity, followers.total) %>% 
+    slice_head(n = 1) %>% 
+    select(id) %>% 
+    pull()
+
+artist_id
+```
+# Get artist audio features
+```{r}
+search_string <- "Radiohead"
+
+# Uses search_spotify() for precise selection of artist id
+radiohead_audio_dt <- 
+    get_artist_audio_features(
+    artist = artist_id,
+    include_groups = "album",
+    return_closest_artist = TRUE,
+    dedupe_albums = TRUE,
+    market = NULL,
+    authorization = get_spotify_access_token()
+    )
+
+radiohead_audio_dt %>% glimpse()
+
+# Combine with track popularity using track_id
+
+```
+
+# Get track popularity scores
+```{r}
+
+get_multiple_tracks <- function(track_ids, limit = 50, time_interval = 2, authorization) {
+  # Calculate the number of chunks required
+  num_chunks <- ceiling(length(track_ids) / limit)
+  
+  # Split the track_ids into chunks
+  track_id_chunks <- split(track_ids, ceiling(seq_along(track_ids) / limit))
+  
+  # Function to get tracks for a chunk and wait for the specified time interval
+  get_tracks_chunk <- function(chunk, time_interval, authorization) {
+    track_info <- get_tracks(
+      ids = chunk,
+      market = NULL,
+      authorization = authorization,
+      include_meta_info = FALSE
+    )
+    Sys.sleep(time_interval)
+    return(track_info)
+  }
+  
+  # Get track information for each chunk and combine the results
+  combined_results <- map_dfr(track_id_chunks, get_tracks_chunk, time_interval, authorization)
+  
+  return(combined_results)
+}
+
+# Usage
+access_token <- get_spotify_access_token()
+track_ids <- radiohead_audio_dt %>% select(track_id) %>% pull()
+combined_results <- get_multiple_tracks(track_ids, limit = 50, time_interval = 2, authorization = access_token)
+
+popularity_score_df <- 
+  combined_results %>% 
+  select(id, name, popularity, uri, album.name, album.release_date)
+
+popularity_score_df
+
+
+```
+
+# Combine the two data frames
+```{r}
+names(popularity_score_df)
+names(radiohead_audio_dt)
+
+songs <- 
+    radiohead_audio_dt %>% 
+    inner_join(popularity_score_df, by = c("track_name" = "name")) %>% 
+    select(track_name, 
+           artist_name, 
+           album_release_date, 
+           danceability:tempo, 
+           time_signature, 
+           duration_ms,
+           popularity) %>% 
+    group_by(track_name) %>%
+    slice_max(popularity, n = 1) %>%
+    ungroup() %>%
+    # distinct(track_name, .keep_all = TRUE) %>%  # Keep only the first occurrence of each track_name
+    mutate(
+      album_release_date = parse_date_time(album_release_date, c("ymd", "Y")),
+      song_age = as.numeric(Sys.Date() - as.Date(album_release_date)))
+
+songs
+
+write_csv(songs, "data/radiohead_songs.csv")
+
+
+```
+
+# Bayesian regression
+
+## Install rstanarm
+```{r}
+# I have 8 cores and am using 4 cores for install
+# I tried installing the development version of rstanarm with
+# rstan package and C++ toolchain using the instructions here: https://github.com/stan-dev/rstanarm
+# 
+# Sys.setenv(MAKEFLAGS = "-j4")
+# Sys.setenv("R_REMOTES_NO_ERRORS_FROM_WARNINGS" = "true")
+# remotes::install_github("stan-dev/rstanarm", INSTALL_opts = "--no-multiarch", force = TRUE)
+# but got this warning:
+# Warning: installation of package ‘C:/Users/mattr/AppData/Local/Temp/RtmpmMWMST/file56301dda3f47/rstanarm_2.21.3.tar.gz’
+# had non-zero exit status
+
+# So used version released on CRAN
+# install.packages("rstanarm")
+
+```
+## Check RStan installation
+```{r}
+
+# example(stan_model, package = "rstan", run.dontrun = TRUE)
+```
+
+## Import data
+```{r}
+songs <- read_csv("data/radiohead_songs.csv")
+
+songs %>% glimpse()
+
+```
+
+## Frequentist linear regression
+- Assumes parameters are fixed and data is random
+```{r}
+lm_model <- lm(popularity ~ song_age, data = songs)
+
+summary(lm_model)
+
+broom::tidy(lm_model)
+
+```
+# Bayesian linear regression
+- Assumes parameters are random and data is fixed
+- Interested in range of parameters that could give rise to given data set
+```{r}
+stan_model <- stan_glm(popularity ~ song_age
+                       ,data = songs
+                       # ,chains = 4
+                       # ,iter = 2000
+                       # ,warmup = 1000
+                       )
+
+summary(stan_model)
+
+broom.mixed::tidy(stan_model)
+
+```
+
+# Credible and confidence intervals
+- Confidence interval: probability that a range contains the true value
+- Credible interval: probability that the true value is within a range
+```{r}
+confint(lm_model, level = 0.95)
+
+posterior_interval(stan_model, level = 0.95)
+
+```
+# Probability that parameters are within a range
+```{r}
+posterior_dist <- tidybayes::spread_draws(stan_model, song_age) %>% 
+    janitor::clean_names()
+
+mean(between(posterior_dist$song_age, 0.001, 0.00179))
+
+```
+
+```{r}
+posterior_dist %>% 
+    ggplot(aes(x = iteration, y = song_age, color = as.character(chain))) +
+    geom_line() +
+    theme_minimal() 
+```
+
+```{r}
+# 3 chains, 1000 iterations, 500 warmup
+model_3chains <- stan_glm(popularity ~ song_age, data = songs,
+    chains = 3, iter = 1000, warmup = 500)
+
+# Print a summary of model_3chains
+summary(model_3chains)
+
+# 2 chains, 100 iterations, 50 warmup
+model_2chains <- stan_glm(popularity ~ song_age, data = songs,
+    chains = 2, iter = 100, warmup = 50)
+
+# Print a summary of model_2chains
+summary(model_2chains)
+
+```
+
+```{python}
+import pystan
+import pandas as pd
+import arviz as az
+```
+
+```{python}
+import pystan
+
+import distutils
+print(distutils.__file__)
+
+model_code = 'parameters {real y;} model {y ~ normal(0,1);}'
+model = pystan.StanModel(model_code=model_code)
+y = model.sampling().extract()['y']
+y.mean() 
+```
+
+
+```{python}
+# Microsoft Visual C++ 14.0 or greater is required. Get it with "Microsoft C++ Build Tools": https://visualstudio.microsoft.com/visual-cpp-build-tools/
+
+# C:\Users\mattr\mambaforge\envs\stan_env\Lib\distutils\distutils.cfg
+
+import distutils
+print(distutils.__file__)
+
+songs = r.songs
+
+# Define the Stan model
+stan_code = """
+data {
+  int<lower=0> N;
+  vector[N] song_age;
+  vector[N] popularity;
+}
+parameters {
+  real alpha;
+  real beta;
+  real<lower=0> sigma;
+}
+model {
+  vector[N] mu = alpha + beta * song_age;
+  
+  // Priors
+  alpha ~ normal(0, 100);
+  beta ~ normal(0, 100);
+  sigma ~ cauchy(0, 5);
+  
+  // Likelihood
+  popularity ~ normal(mu, sigma);
+}
+"""
+
+# Prepare the data for Stan
+data = {
+    'N': len(songs),
+    'song_age': songs['song_age'].values,
+    'popularity': songs['popularity'].values
+}
+
+# Compile the Stan model
+sm = pystan.StanModel(model_code=stan_code)
+
+# Fit the model to the data
+fit = sm.sampling(data=data, iter=2000, chains=4, warmup=1000)
+
+# Print the summary
+print(fit)
+
+# Convert the results to ArviZ InferenceData
+idata = az.from_pystan(fit)
+
+# Extract the parameters and display the summary
+params_df = az.summary(idata).reset_index()
+params_df.columns = ['parameter', 'mean', 'sd', 'hdi_3%', 'hdi_97%', 'mcse', 'ess', 'r_hat']
+print(params_df)
+
+
+```
+

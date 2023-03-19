@@ -1,0 +1,128 @@
+---
+title: "causal analysis"
+author: "Matt Rosinski"
+date: "2023-03-10"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(CausalImpact)
+
+library(tidyverse)
+
+# Load data
+data <- read.csv('website_visitors.csv', header=TRUE)
+
+# devtools::install_github("JasjeetSekhon/Matching")
+library(Matching)
+
+
+# Load the nswre74 dataset
+data("GerberGreenImai")
+
+# View the dataset
+head(GerberGreenImai)
+
+
+
+# Load the Icecream dataset
+data()
+
+?CausalImpact::CausalImpact()
+
+# View the dataset
+Icecream %>%  glimpse()
+
+# Define pre-intervention and post-intervention date range
+pre_intervention <- c(1, 84)
+post_intervention <- c(85, 153)
+
+# Perform causal analysis
+ci <- CausalImpact(data, pre_intervention, post_intervention)
+
+# Plot results
+plot(ci)
+
+```
+```{python}
+import seaborn as sns
+from scipy.stats import chi2_contingency
+
+# Load the Titanic dataset
+titanic = sns.load_dataset('titanic')
+
+type(titanic)
+
+titanic.columns
+
+# titanic.describe()
+
+titanic['class'].value_counts()
+titanic['survived'].value_counts()
+titanic['who'].value_counts()
+
+# Define the independent variable (passenger class) and outcome variable (survival)
+independent_var = 'class'
+outcome_var = 'survived'
+
+# Randomize participants
+titanic['group'] = np.random.choice(['treatment', 'control'], size=len(titanic))
+
+# Control for confounding variables
+observed = pd.crosstab(titanic['who'], 
+                        titanic[independent_var], 
+                        titanic[outcome_var], 
+                        aggfunc=sum)
+
+# Check number of total survivors                        
+observed.sum().sum()                        
+
+_, pvalue, _, _ = chi2_contingency(observed)
+
+pvalue
+
+# Determine the sample size
+sample_size = len(titanic)
+
+# Measure the outcome variable
+treatment_mean = titanic.loc[titanic['group'] == 'treatment', outcome_var].mean()
+control_mean = titanic.loc[titanic['group'] == 'control', outcome_var].mean()
+
+treatment_mean
+control_mean
+
+```
+
+
+```{python}
+from causalimpact import CausalImpact
+
+import pandas as pd
+
+# Load the Icecream dataset
+url = 'https://raw.githubusercontent.com/google/CausalImpact/master/inst/python/data/Icecream.csv'
+data = pd.read_csv(url, index_col=0)
+
+# View the dataset
+data.head()
+
+
+# Load data
+data = pd.read_csv('website_visitors.csv', index_col=0)
+
+# Define pre-intervention and post-intervention date range
+pre_intervention = [0, 84]
+post_intervention = [85, 153]
+
+# Perform causal analysis
+ci = CausalImpact(data, pre_intervention, post_intervention)
+
+# Plot results
+ci.plot()
+
+```
+

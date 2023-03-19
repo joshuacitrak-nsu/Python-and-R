@@ -1,0 +1,499 @@
+---
+title: "exploring spotify api"
+author: "Matt Rosinski"
+date: "2023-03-17"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+# Future exploration - Youtube API
+```{r}
+# https://github.com/soodoku/tuber
+
+```
+
+
+# Spotify API
+```{r}
+# devtools::install_github('charlie86/spotifyr')
+
+# Documentation
+# https://www.rcharlie.com/spotifyr/
+Sys.setenv(SPOTIFY_CLIENT_ID = 'getyourown')
+Sys.setenv(SPOTIFY_CLIENT_SECRET = 'gotospotifywebapi')
+Sys.setenv(SPOTIFY_REDIRECT_URI = "http://localhost:1410/")
+
+
+```
+
+# Spotifyr documentation
+https://www.rdocumentation.org/packages/spotifyr/versions/2.2.4
+
+```{r}
+library(spotifyr)
+library(tidyverse)
+library(lubridate)
+library(gt)
+
+access_token <- get_spotify_access_token()
+```
+
+```{r}
+beatles <- get_artist_audio_features('the beatles')
+
+```
+
+# What was The Beatles favourite key?
+```{r}
+
+beatles %>% 
+    count(key_mode, sort = TRUE) %>% 
+    head(5) %>% 
+    gt()
+
+beatles %>% glimpse()
+
+```
+```{r}
+my_id <- 'loudfruit'
+my_plists <- get_user_playlists(user_id = my_id)
+
+my_plists %>% str()
+
+my_plists %>% names()
+
+my_plists %>%  View()
+
+my_plists2 <- my_plists %>%
+    filter(name %in% c('2023 Most Streamed', 'Most Streamed')) %>% 
+    select(href) %>% pull()
+    
+
+```
+
+# Get my recently played songs
+```{r}
+
+get_my_recently_played(limit = 10) %>%
+    mutate(artist.name = map_chr(track.artists, function(x) x$name[1]),
+           played_at = as_datetime(played_at)) %>%
+    select(track.name, artist.name, track.album.name, played_at) %>%
+    gt()
+
+
+```
+
+
+```{r}
+get_my_playlists()
+
+get_user_playlists("loudfruit")
+
+res <- get_artist_top_tracks(id = "0TnOYISbd1XYRBk9myaseg")
+res$artists[1]
+
+res$name
+res$album.name
+res$album.artists
+```
+
+# Find the Spotify ID for an artist
+```{r}
+# Replace this with the name of the artist you are looking for
+artist_name <- "Radiohead"
+
+# Search for the artist
+search_results <- search_artists(artist_name)
+
+# Display the search results
+search_results
+
+spotify_id <- 
+    spotifyr::search_spotify(q = artist_name, type = "artist") %>% 
+    arrange(desc(popularity)) %>% 
+    select(-c("genres", "href", "images")) %>% 
+    select(id) %>% 
+    slice_head(n = 1) %>% 
+    pull()
+
+spotify_id
+
+
+```
+
+
+# Get my followed artists
+```{r}
+get_my_followed_artists(
+  limit = 20,
+  after = NULL,
+  authorization = get_spotify_authorization_code(),
+  include_meta_info = FALSE
+) %>% 
+    select(name)
+
+
+
+# Check authorisation code
+# get_spotify_authorization_code(
+#   client_id = Sys.getenv("SPOTIFY_CLIENT_ID"),
+#   client_secret = Sys.getenv("SPOTIFY_CLIENT_SECRET"),
+#   scope = scopes()
+# )
+
+```
+
+# Get Spotify ID for playlists
+```{r}
+
+search_string <- "Australia"
+
+spotify_playlists <- 
+    spotifyr::search_spotify(q = search_string, type = "playlist") %>% 
+    select(id, name, tracks.total, uri, external_urls.spotify, owner.id, owner.display_name) 
+
+spotify_playlist_id <- spotify_playlists %>% 
+    select(id) %>% 
+    slice_head(n = 1) %>% 
+    pull()
+
+spotify_playlist_id
+
+
+```
+
+# Get User Playlists
+```{r}
+
+user_id <- "spotify"
+
+user_playlists = get_user_playlists(
+  user_id = user_id,
+  limit = 20,
+  offset = 0,
+  authorization = get_spotify_authorization_code(),
+  include_meta_info = FALSE
+)
+
+user_playlists %>%  glimpse()
+
+user_playlists %>% 
+    select(name, id, uri)
+
+playlist_uris <- 
+    user_playlists %>% 
+    select(id) %>% 
+    pull()
+
+playlist_uris
+
+```
+# Get single playlist
+```{r}
+
+playlist_id <- sample(playlist_uris, size = 1)
+
+playlist_df <- get_playlist(
+  playlist_id = playlist_id,
+  fields = NULL,
+  market = NULL,
+  authorization = get_spotify_access_token()
+)
+
+names(playlist_df)
+
+tidy(playlist_df)
+
+```
+# Get my playlist
+```{r}
+myplaylists <- get_my_playlists()
+
+myplaylists
+
+```
+
+
+# Get popularity and audio features of every song in a playlist
+```{r}
+
+playlist_song_features <- 
+    get_playlist_audio_features(
+        username = "spotify",
+        playlist_uris = playlist_uris,
+        authorization = get_spotify_access_token()
+)
+
+playlist_song_features %>% glimpse()
+
+playlist_song_features %>% 
+    select(track.popularity, 
+           track.name, 
+           track.artists, 
+           track.album.name, 
+           track.album.release_date, 
+           track.id,
+           danceability:tempo
+           ) %>% 
+    glimpse()
+
+write_csv(playlist_song_features, file = "data/playlist_song_features.csv")
+
+# playlist_song_features$track.artists
+
+```
+# Get album information
+```{r}
+
+albumn_ids <- sample(playlist_song_features$track.album.id, size = 20)
+
+album_info_df <- get_albums(
+  ids = albumn_ids,
+  market = NULL,
+  authorization = get_spotify_access_token(),
+  include_meta_info = FALSE
+)
+
+names(album_info_df)
+
+album_info_df$artists
+
+album_info_df$name
+
+
+```
+# Search Spotify
+```{r}
+# search_spotify(
+#   q,
+#   type = c("album", "artist", "playlist", "track", "show", "episode"),
+#   market = NULL,
+#   limit = 20,
+#   offset = 0,
+#   include_external = NULL,
+#   authorization = get_spotify_access_token(),
+#   include_meta_info = FALSE
+# )
+search_string <- "Radiohead"
+
+search_results <- search_spotify(
+  q = search_string,
+  type = c("artist"),
+  authorization = get_spotify_access_token()
+)
+
+artist_id <- search_results %>% 
+    arrange(desc(popularity)) %>% 
+    select(id, name, uri, popularity, followers.total) %>% 
+    slice_head(n = 1) %>% 
+    select(id) %>% 
+    pull()
+```
+
+
+# Get artist audio features
+```{r}
+search_string <- "Radiohead"
+
+# Uses search_spotify() for precise selection of artist id
+radiohead_audio_dt <- 
+    get_artist_audio_features(
+    artist = artist_id,
+    include_groups = "album",
+    return_closest_artist = TRUE,
+    dedupe_albums = TRUE,
+    market = NULL,
+    authorization = get_spotify_access_token()
+    )
+
+radiohead_audio_dt %>% glimpse()
+
+# Combine with track popularity using track_id
+
+```
+# Get artist top tracks by country
+
+```{r}
+radiohead_top_us_tracks <- get_artist_top_tracks(
+  id = artist_id,
+  market = "US",
+  authorization = get_spotify_access_token(),
+  include_meta_info = FALSE
+)
+
+radiohead_popular_us_df <- radiohead_top_us_tracks %>%  
+    arrange(desc(popularity)) %>% 
+    mutate(country = "US") %>% 
+    select(name, id, popularity, country, uri, album.name)
+
+radiohead_popular_au_df <- radiohead_top_us_tracks %>%  
+    arrange(desc(popularity)) %>% 
+    mutate(country = "AU") %>% 
+    select(name, id, popularity, country, uri, album.name)
+
+radiohead_tracks_us <- radiohead_popular_us_df %>% 
+    left_join(radiohead_audio_dt, by = c("name" = "track_name")) %>% 
+    select(-c("album_images", "track_preview_url", "type", "external_urls.spotify"))
+
+nrow(radiohead_tracks_us)
+
+radiohead_tracks_au <- radiohead_popular_au_df %>% 
+    left_join(radiohead_audio_dt, by = c("name" = "track_name")) %>% 
+    select(-c("album_images", "track_preview_url", "type", "external_urls.spotify"))
+
+nrow(radiohead_tracks_au)
+
+radiohead_tracks_us %>% 
+    anti_join(radiohead_tracks_au, by = "name")
+
+radiohead_tracks_au %>% 
+    anti_join(radiohead_tracks_us, by = "name")
+
+radiohead_tracks_us %>% 
+    select(name, popularity, country) %>% 
+    left_join(radiohead_tracks_au %>% 
+    select(name, popularity, country), by = "name")
+```
+
+# Get track information including popularity
+
+```{r}
+track_id <- radiohead_top_us_tracks %>% select(id) %>% slice_head(n = 1) %>%  pull()
+
+track_info <- get_track(id = track_id, market = NULL, authorization = get_spotify_access_token())
+
+names(track_info)
+
+track_info$popularity
+
+
+```
+# Get track popularity scores
+```{r}
+track_ids <- radiohead_top_us_tracks %>% select(id) %>% slice_head(n = 10) %>%  pull()
+
+track_list_info <- 
+    get_tracks(
+    ids = track_ids,
+    market = NULL,
+    authorization = get_spotify_access_token(),
+    include_meta_info = FALSE
+)
+
+popularity_score_df <- 
+    track_list_info %>% 
+    select(id, name, popularity, duration_ms, uri, album.name, album.release_date)
+
+```
+
+
+
+# Get my top artists - returning empty list()
+```{r}
+get_my_top_artists_or_tracks(
+  type = "artists",
+  limit = 20,
+  offset = 0,
+  time_range = "short_term",
+  authorization = get_spotify_authorization_code(),
+  include_meta_info = FALSE
+)
+```
+
+
+```{r}
+get_my_top_artists_or_tracks(
+    type = 'artists', 
+    time_range = 'short_term', 
+    limit = 5) %>% 
+    select(name, genres) %>% 
+    rowwise %>% 
+    mutate(genres = paste(genres, collapse = ', ')) %>% 
+    ungroup %>% 
+    gt()
+```
+```{r}
+
+
+get_my_top_artists_or_tracks(type = 'artists', 
+                             time_range = 'long_term', 
+                             limit = 5) %>% 
+    select(.data$name, .data$genres) %>% 
+    rowwise %>% 
+    mutate(genres = paste(.data$genres, collapse = ', ')) %>% 
+    ungroup %>% 
+    gt()
+
+get_my_top_artists_or_tracks(type = 'tracks', 
+                             time_range = 'short_term', 
+                             limit = 5) %>% 
+    mutate(artist.name = map_chr(artists, function(x) x$name[1])) %>% 
+    select(name, artist.name, album.name) %>% 
+    gt()
+```
+
+```{r}
+library(dplyr)
+library(gt)
+library(purrr)
+
+access_token <- get_spotify_access_token()
+
+spotifyr::get_my_top_artists_or_tracks()
+
+get_my_top(type = 'tracks', time_range = 'short_term', limit = 5) %>% 
+    mutate(artist.name = map_chr(artists, function(x) x$name[1])) %>% 
+    select(name, artist.name, album.name) %>% 
+    gt()
+
+```
+
+
+```{r}
+radiohead <- spotifyr::get_artist_audio_features("radiohead")
+
+```
+
+```{r}
+radiohead %>% glimpse()
+
+radiohead_id <- unique(radiohead$artist_id)
+
+radiohead_top_tracks <- spotifyr::get_artist_top_tracks(id = radiohead_id)
+
+radiohead_top_tracks %>% glimpse()
+
+```
+
+```{r}
+joy <- get_artist_audio_features('joy division')
+```
+
+
+```{r}
+
+joy %>% 
+    arrange(-valence) %>% 
+    select(track_name, valence) %>% 
+    head(5) %>% 
+    gt()
+
+joy %>% 
+    arrange(-valence) %>% 
+    select(.data$track_name, .data$valence) %>% 
+    head(5) %>% 
+    gt()
+```
+```{r}
+library(ggjoy)
+
+ggplot(joy, aes(x = valence, y = album_name)) + 
+    geom_joy() + 
+    theme_joy() +
+    ggtitle("Joyplot of Joy Division's joy distributions", subtitle = "Based on valence pulled from Spotify's Web API with spotifyr")
+```
+
