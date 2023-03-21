@@ -1,0 +1,239 @@
+---
+title: "Spotify in Python and R"
+author: "Matt Rosinski"
+date: "2023-03-19"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{python}
+# Python 3.10 - environment
+# pip install pandas numpy requests spotipy
+
+import os
+import time
+import pandas as pd
+import numpy as np
+from spotipy import Spotify, SpotifyOAuth
+from spotipy.util import prompt_for_user_token
+
+pd.options.display.max_columns = None
+os.environ["SPOTIPY_CLIENT_ID"] = 'getyourown'
+os.environ["SPOTIPY_CLIENT_SECRET"] = 'gotospotifywebapi'
+os.environ["SPOTIPY_REDIRECT_URI"] = "http://localhost:1410/"
+
+scope = "user-library-read"
+token = prompt_for_user_token(scope=scope)
+sp = Spotify(auth=token)
+
+```
+
+# Find the Spotify ID for an artist:
+```{python}
+search_string = "Radiohead"
+result = sp.search(q=search_string, type="artist")
+artist_id = result['artists']['items'][0]['id']
+artist_id
+```
+# Get artist audio features:
+```{python}
+def get_artist_audio_features(artist_id, sp):
+    albums = sp.artist_albums(artist_id)
+    album_ids = [album['id'] for album in albums['items']]
+    
+    audio_features = []
+    
+    for album_id in album_ids:
+        tracks = sp.album_tracks(album_id)
+        track_ids = [track['id'] for track in tracks['items']]
+        audio_features += sp.audio_features(track_ids)
+    
+    audio_features_df = pd.DataFrame(audio_features)
+    return audio_features_df
+
+radiohead_audio_df = get_artist_audio_features(artist_id, sp)
+
+radiohead_audio_df.head()
+
+```
+# Get track popularity scores:
+```{python}
+
+def get_multiple_tracks(track_ids, sp, limit=50, time_interval=2):
+    num_chunks = int(np.ceil(len(track_ids) / limit))
+    track_id_chunks = np.array_split(track_ids, num_chunks)
+    
+    combined_results = []
+    
+    for chunk in track_id_chunks:
+        track_info = sp.tracks(chunk)
+        combined_results += track_info['tracks']
+        time.sleep(time_interval)
+    
+    track_popularity_df = pd.DataFrame(combined_results)
+    track_popularity_df['album_release_date'] = track_popularity_df['album'].apply(lambda x: x['release_date'])
+    return track_popularity_df
+
+track_ids = radiohead_audio_df['id']
+
+combined_results_df = get_multiple_tracks(track_ids, sp)
+popularity_score_df = combined_results_df[['id', 'name', 'popularity', 'uri', 'album', 'album_release_date']]
+
+popularity_score_df.columns
+popularity_score_df.head()
+
+```
+
+```{python}
+songs = pd.merge(radiohead_audio_df, popularity_score_df, on='id', how='inner')
+songs['album_release_date'] = pd.to_datetime(songs['album_release_date'])
+songs['song_age'] = (pd.Timestamp.now() - songs['album_release_date']).dt.days
+
+songs.describe()
+songs.head()
+
+songs.columns
+
+# Save to CSV file
+songs.to_csv('data/radiohead_songs_py.csv', index=False)
+
+```
+
+```{r}
+library(tidyverse)
+
+songs <- read_csv("data/radiohead_songs_py.csv")
+
+songs %>% glimpse()
+
+first(songs$album_release_date)
+last(songs$album_release_date)
+
+
+```
+# Find the Spotify ID for an artist
+```{r}
+library(tidyverse)
+library(spotifyr)
+
+Sys.setenv(SPOTIFY_CLIENT_ID = 'getyourown')
+Sys.setenv(SPOTIFY_CLIENT_SECRET = 'gotospotifywebapi')
+Sys.setenv(SPOTIFY_REDIRECT_URI = "http://localhost:1410/")
+
+access_token <- get_spotify_access_token()
+
+# Replace this with the name of the artist you are looking for!
+search_string <- "Radiohead"
+
+search_results <- search_spotify(
+  q = search_string,
+  type = c("artist"),
+  authorization = get_spotify_access_token()
+)
+
+artist_id <- search_results %>% 
+    arrange(desc(popularity)) %>% 
+    select(id, name, uri, popularity, followers.total) %>% 
+    slice_head(n = 1) %>% 
+    select(id) %>% 
+    pull()
+
+artist_id
+```
+
+# Get artist audio features
+```{r}
+search_string <- "Radiohead"
+
+radiohead_audio_dt <- 
+    get_artist_audio_features(
+    artist = artist_id,
+    include_groups = "album",
+    return_closest_artist = TRUE,
+    dedupe_albums = TRUE,
+    market = NULL,
+    authorization = get_spotify_access_token()
+    )
+
+radiohead_audio_dt %>% names()
+
+```
+
+# Get track popularity scores
+```{r}
+
+get_multiple_tracks <- function(track_ids, 
+                                limit = 50, 
+                                time_interval = 2, 
+                                authorization) {
+  # Calculate the number of chunks required
+  num_chunks <- ceiling(length(track_ids) / limit)
+  
+  # Split the track_ids into chunks
+  track_id_chunks <- split(track_ids, ceiling(seq_along(track_ids) / limit))
+  
+  # Function to get tracks for a chunk and wait for the specified time interval
+  get_tracks_chunk <- function(chunk, time_interval, authorization) {
+    track_info <- get_tracks(
+      ids = chunk,
+      market = NULL,
+      authorization = authorization,
+      include_meta_info = FALSE
+    )
+    Sys.sleep(time_interval)
+    return(track_info)
+  }
+  
+  # Get track information for each chunk and combine the results
+  combined_results <- map_dfr(track_id_chunks, 
+                              get_tracks_chunk, 
+                              time_interval, 
+                              authorization)
+  
+  return(combined_results)
+}
+
+access_token <- get_spotify_access_token()
+track_ids <- radiohead_audio_dt %>% select(track_id) %>% pull()
+combined_results <- get_multiple_tracks(track_ids, 
+                                        limit = 50, 
+                                        time_interval = 2, 
+                                        authorization = access_token)
+
+popularity_score_df <- 
+  combined_results %>% 
+  select(id, name, popularity, uri, album.name, album.release_date)
+
+popularity_score_df %>% head()
+
+```
+
+# Combine the two data frames
+```{r}
+songs <- 
+    radiohead_audio_dt %>% 
+    inner_join(popularity_score_df, by = c("track_name" = "name")) %>% 
+    select(track_name, 
+           artist_name, 
+           album_release_date, 
+           danceability:tempo, 
+           time_signature, 
+           duration_ms,
+           popularity) %>% 
+    group_by(track_name) %>%
+    slice_max(popularity, n = 1) %>%
+    ungroup() %>%
+    # distinct(track_name, .keep_all = TRUE) %>%  # Keep only the first 
+    mutate(
+      album_release_date = parse_date_time(album_release_date, c("ymd", "Y")),
+      song_age = as.numeric(Sys.Date() - as.Date(album_release_date)))
+
+songs %>% head()
+
+write_csv(songs, "data/radiohead_songs.csv")
+
+```
+

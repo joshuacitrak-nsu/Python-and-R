@@ -15,5 +15,5 @@ LaTeX: pdfLaTeX
 StripTrailingWhitespace: Yes
 
 PythonType: conda
-PythonVersion: 3.7.12
-PythonPath: C:/Users/mattr/mambaforge/envs/stan_env/python.exe
+PythonVersion: 3.10.8
+PythonPath: C:/Users/mattr/mambaforge/envs/tensorflow/python.exe
