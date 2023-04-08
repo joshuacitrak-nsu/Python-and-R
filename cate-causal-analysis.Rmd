@@ -1,0 +1,302 @@
+---
+title: "cate-causal-analysis"
+author: "Matt Rosinski"
+date: "2023-04-07"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+set.seed(42)
+
+# Number of samples
+n <- 5000
+
+# Covariate: age
+age <- rnorm(n, mean = 30, sd = 10)
+
+# Treatment variable: job training (random assignment)
+treatment <- rbinom(n, size = 1, prob = 0.5)
+
+# True treatment effect (varying with age)
+# Here's how the treatment effect varies with age:
+# 
+# We use the cumulative distribution function of a normal distribution (pnorm) 
+# with a mean of 40 and a standard deviation of 10 to create a weight that 
+# depends on an individual's age.
+# We subtract this weight from 1, so that the treatment effect is larger for 
+# younger individuals (with ages less than 40) and smaller for older individuals 
+# (with ages greater than 40).
+# We multiply this adjusted weight by 500 to scale the treatment effect to a 
+# more realistic range.
+true_cate <- 500 * (1 - pnorm(age, mean = 40, sd = 10))
+
+# Outcome variable: income
+noise <- rnorm(n, mean = 0, sd = 500)
+income <- 2000 + 50 * age + treatment * true_cate + noise
+
+# Create the data frame
+data <- tibble(age = age, treatment = treatment, income = income)
+```
+
+
+```{r}
+model <- lm(income ~ treatment * age, data = data)
+summary(model)
+
+# The estimated coefficients for treatment, age, and 
+# treatment:age represent the treatment effect, the effect of age on income, 
+# and the heterogeneous treatment effect (CATE) across different ages, respectively.
+
+```
+
+```{r}
+# In this case, the model assumes that the effect of the treatment is the 
+# same for all individuals, regardless of their age. This model only 
+# considers the main effects of treatment and age on income.
+model_lm <- lm(income ~ treatment + age, data = data)
+summary(model_lm)
+```
+
+```{r}
+# when you fit the model lm(income ~ treatment * age, data = data), you're 
+# including the interaction term between treatment and age. This model allows 
+# for the treatment effect to vary across different ages, capturing the 
+# heterogeneous treatment effect.
+```
+
+# Compare goodness of fit
+```{r}
+# Model without interaction
+model_no_interaction <- lm(income ~ treatment + age, data = data)
+
+# Model with interaction
+model_interaction <- lm(income ~ treatment * age, data = data)
+
+```
+
+# Calculate AIC and BIC
+Akaike Information Criterion (AIC) and Bayesian Information Criterion (BIC)
+```{r}
+aic_no_interaction <- AIC(model_no_interaction)
+bic_no_interaction <- BIC(model_no_interaction)
+
+aic_interaction <- AIC(model_interaction)
+bic_interaction <- BIC(model_interaction)
+
+```
+
+# Compare AIC and BIC values
+If the AIC and/or BIC values for the model with interaction are lower 
+than the ones for the model without interaction, it suggests that the 
+model with interaction is superior, taking both goodness of fit and model 
+complexity into account.
+```{r}
+# Compare AIC values
+cat("AIC without interaction:", aic_no_interaction, "\n")
+cat("AIC with interaction:", aic_interaction, "\n")
+
+# Compare BIC values
+cat("BIC without interaction:", bic_no_interaction, "\n")
+cat("BIC with interaction:", bic_interaction, "\n")
+
+```
+# Exploratory data analysis
+```{r}
+library(ggplot2)
+
+data %>%
+  ggplot(aes(x = age, y = income, color = as.factor(treatment))) +
+  geom_point(alpha = 0.5) +
+  theme_minimal() +
+  labs(x = "Age", y = "Income", color = "Treatment") +
+  ggtitle("Scatterplot of Income by Age and Treatment")
+
+
+```
+Plot the model predictions against the true income values.
+```{r}
+data$predicted_no_interaction <- predict(model_no_interaction, data)
+data$predicted_interaction <- predict(model_interaction, data)
+
+# Plot model predictions against true income values
+data %>%
+  ggplot() +
+  geom_point(aes(x = income, y = predicted_no_interaction, color = "No Interaction"), alpha = 0.5) +
+  geom_point(aes(x = income, y = predicted_interaction, color = "Interaction"), alpha = 0.5) +
+  geom_abline(intercept = 0, slope = 1, linetype = "dashed", color = "black") +
+  theme_minimal() +
+  labs(x = "True Income", y = "Predicted Income", color = "Model") +
+  ggtitle("Model Predictions vs. True Income")
+
+```
+
+# Compare residuals
+```{r}
+data$residuals_no_interaction <- residuals(model_no_interaction)
+data$residuals_interaction <- residuals(model_interaction)
+
+# Residuals vs. Age
+data %>%
+  ggplot() +
+  geom_point(aes(x = age, y = residuals_no_interaction, color = "No Interaction"), alpha = 0.5) +
+  geom_point(aes(x = age, y = residuals_interaction, color = "Interaction"), alpha = 0.5) +
+  theme_minimal() +
+  labs(x = "Age", y = "Residuals", color = "Model") +
+  ggtitle("Model Residuals vs. Age")
+
+```
+
+```{r}
+# Add a new column to the data for model type
+data_long <- data %>%
+    select(age, residuals_no_interaction, residuals_interaction) %>%
+    pivot_longer(cols = 2:3, names_to = "Model", values_to = "Residuals")
+
+# Residuals vs. Age
+ggplot(data_long, aes(x = age, y = Residuals, color = Model)) +
+    geom_point(alpha = 0.5) +
+    facet_wrap(~ Model, scales = "free_y") +
+    theme_minimal() +
+    theme(legend.position = "bottom") +
+    labs(title = "Model Residuals vs. Age", x = "Age", y = "Residuals", color = "Model") 
+
+```
+# Perform k-folds cross validation
+```{r}
+library(tidymodels)
+library(doParallel)
+library(foreach)
+library(tictoc)
+
+set.seed(42)
+data_split <- initial_split(data, prop = 0.8)
+data_train <- training(data_split)
+data_test <- testing(data_split)
+
+```
+
+```{r}
+lm_spec_no_interaction <- linear_reg() %>%
+  set_engine("lm") %>%
+  set_mode("regression")
+
+lm_spec_interaction <- linear_reg() %>%
+  set_engine("lm") %>%
+  set_mode("regression")
+
+```
+
+```{r}
+recipe_no_interaction <- recipe(income ~ treatment + age, data = data)
+
+recipe_interaction <- recipe(income ~ treatment + age, data = data) %>%
+  step_interact(~ treatment * age)
+
+```
+
+```{r}
+set.seed(42)
+registerDoParallel(cores = parallel::detectCores())
+
+# Need to check for data leakage
+# test and train split
+
+
+# Define k-fold cross-validation settings
+cv_folds <- vfold_cv(data_train, v = 10)
+
+# Fit the models using cross-validation in parallel
+fit_resamples_control <- control_resamples(save_pred = TRUE, verbose = FALSE)
+```
+
+
+```{r}
+tic()
+# Fit the model without interaction using cross-validation
+cv_no_interaction <- workflow() %>%
+  add_model(lm_spec_no_interaction) %>%
+  add_recipe(recipe_no_interaction) %>%
+  fit_resamples(cv_folds, control = fit_resamples_control)
+
+# Fit the model with interaction using cross-validation
+cv_interaction <- workflow() %>%
+  add_model(lm_spec_interaction) %>%
+  add_recipe(recipe_interaction) %>%
+  fit_resamples(cv_folds, control = fit_resamples_control)
+toc()
+
+```
+
+
+```{r}
+tic()
+# Fit the model without interaction using cross-validation in parallel
+cv_no_interaction <- foreach(i = seq_along(cv_folds$splits), 
+                             .combine = c, 
+                             .packages = "tidymodels") %dopar% {
+  split <- cv_folds$splits[[i]]
+  data_train <- analysis(split)
+  data_test <- assessment(split)
+  
+  fit_no_interaction <- lm_spec_no_interaction %>%
+    fit(income ~ treatment + age, data = data_train)
+  
+  predict(fit_no_interaction, data_test) %>%
+    bind_cols(data_test, .)
+}
+
+# Fit the model with interaction using cross-validation in parallel
+cv_interaction <- foreach(i = seq_along(cv_folds$splits), 
+                          .combine = c, 
+                          .packages = "tidymodels") %dopar% {
+  split <- cv_folds$splits[[i]]
+  data_train <- analysis(split)
+  data_test <- assessment(split)
+  
+  fit_interaction <- lm_spec_interaction %>%
+    fit(income ~ treatment * age, data = data_train)
+  
+  predict(fit_interaction, data_test) %>%
+    bind_cols(data_test, .)
+}
+toc()
+
+```
+# The model with interaction has a lower RMSE
+```{r}
+# Collect performance metrics
+performance_no_interaction <- cv_no_interaction %>% collect_predictions()
+performance_interaction <- cv_interaction %>% collect_predictions()
+
+# Calculate mean squared errors
+mse_no_interaction <- mean((performance_no_interaction$income - performance_no_interaction$.pred)^2)
+mse_interaction <- mean((performance_interaction$income - performance_interaction$.pred)^2)
+
+cat("Mean RMSE without interaction (training data):", sqrt(mse_no_interaction), "\n")
+cat("Mean RMSE with interaction (training data):", sqrt(mse_interaction), "\n")
+
+```
+# Final retrain and test
+```{r}
+# Train final models on the entire training dataset
+final_model_no_interaction <- lm_spec_no_interaction %>% fit(income ~ treatment + age, data = data_train)
+final_model_interaction <- lm_spec_interaction %>% fit(income ~ treatment * age, data = data_train)
+
+# Make predictions on the test dataset
+predictions_no_interaction <- predict(final_model_no_interaction, data_test)
+predictions_interaction <- predict(final_model_interaction, data_test)
+
+# Calculate mean squared errors for the test dataset
+mse_no_interaction_test <- mean((data_test$income - predictions_no_interaction$.pred)^2)
+mse_interaction_test <- mean((data_test$income - predictions_interaction$.pred)^2)
+
+cat("Mean RMSE without interaction (test data):", sqrt(mse_no_interaction_test), "\n")
+cat("Mean RMSE with interaction (test data):", sqrt(mse_interaction_test), "\n")
+
+```
+
