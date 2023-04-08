@@ -115,20 +115,21 @@ ax.spines['bottom'].set_linewidth(0.5)
 
 plt.show()
 
-
-# Prepare the new data and update the data dictionary ----
-predict_data = {'song_age': [500, 9000]}
-N_new = len(predict_data['song_age'])
-
-# Add N_new and song_age_new to the data dictionary
-data.update({'N_new': N_new, 'song_age_new': predict_data['song_age']})
-
-# Run the sampler with the updated data
+# Compile and run the Stan model
 posterior = stan.build(stan_code, data=data, random_seed=1)
-
 fit = posterior.sample(num_chains=5, num_samples=1000)
 
-predicted_popularity = fit["predicted_popularity"]
+# Extract parameter samples
+alpha_samples = fit['alpha'].flatten()
+beta_samples = fit['beta'].flatten()
+sigma_samples = fit['sigma'].flatten()
+
+# Define new song ages
+new_song_ages = np.array([500, 9000])
+
+# Compute predicted popularity for new song ages using posterior samples ----
+predicted_popularity = np.outer(alpha_samples, np.ones_like(new_song_ages)) + \
+  np.outer(beta_samples, new_song_ages)
 
 # Predictions for popularity with song age of 500 days
 summary_500 = np.percentile(predicted_popularity[:, 0], [2.5, 25, 50, 75, 97.5])
@@ -136,24 +137,11 @@ summary_500 = np.percentile(predicted_popularity[:, 0], [2.5, 25, 50, 75, 97.5])
 # Predictions for popularity with song age of 9000 days
 summary_9000 = np.percentile(predicted_popularity[:, 1], [2.5, 25, 50, 75, 97.5])
 
-print("Summary for popularity with song age of 500 days:")
-print(summary_500)
+print("Mean popularity with song age of 500 days:")
+print(round(summary_500[2], 1))
 
-print("Summary for popularity with song age of 9000 days:")
-print(summary_9000)
-
-predicted_popularity.shape
-predicted_popularity_reshaped = predicted_popularity.reshape(193, 5000).T
-
-predictions_df = pd.DataFrame(predicted_popularity_reshaped, columns=["500 days", "9000 days"])
-
-
-# Define new song ages
-new_song_ages = np.array([500, 9000])
-
-# Compute predicted popularity for new song ages using posterior samples
-predicted_popularity = np.outer(alpha_samples, np.ones_like(new_song_ages)) + \
-  np.outer(beta_samples, new_song_ages)
+print("Mean popularity with song age of 9000 days:")
+print(round(summary_9000[2], 1))
 
 # Create a DataFrame for predicted popularity
 predictions_df = pd.DataFrame(predicted_popularity, columns=["500 days", "9000 days"])
@@ -163,6 +151,14 @@ predictions_melted = predictions_df.melt(var_name="song_age", value_name="predic
 
 sns.set_style("whitegrid")
 fig, (ax1, ax2) = plt.subplots(nrows=2, ncols=1, figsize=(8, 8), sharex=True)
+fig.subplots_adjust(hspace=0.4)
+
+# Set custom colors
+colours = ["#8B008B", "#BDB76B"]
+
+# Add mean labels
+mean_9000 = np.mean(summary_9000)
+mean_500 = np.mean(summary_500)
 
 # Plot density for 500 days
 sns.kdeplot(
@@ -173,10 +169,14 @@ sns.kdeplot(
     alpha=0.8,
     linewidth=0,
     ax=ax1,
-)
+    color=colours[0]
+    )
 ax1.set_title("500 days")
 ax1.set_xlabel("")  # remove x-label for the top subplot
 ax1.set_ylabel("Density")
+ax1.axvline(mean_500, linestyle='--', color='black', label='Mean popularity')
+ax1.annotate(f'Mean: {mean_500:.0f}', xy=(mean_500, 0.1), xytext=(mean_500+2.5, 0.25),
+             fontsize=12, ha='center', va='center', color='black')
 
 # Plot density for 9000 days
 sns.kdeplot(
@@ -187,10 +187,14 @@ sns.kdeplot(
     alpha=0.8,
     linewidth=0,
     ax=ax2,
+    color=colours[1]
 )
 ax2.set_title("9000 days")
 ax2.set_xlabel("Song popularity on Spotify")
 ax2.set_ylabel("Density")
+ax2.axvline(mean_9000, linestyle='--', color='black', label='Mean popularity')
+ax2.annotate(f'Mean: {mean_9000:.0f}', xy=(mean_9000, 0.1), xytext=(mean_9000+2.5, 0.25),
+             fontsize=12, ha='center', va='center', color='black')
 
 fig.suptitle("Predicted Radiohead song popularity distributions as a function of song age")
 sns.despine()
