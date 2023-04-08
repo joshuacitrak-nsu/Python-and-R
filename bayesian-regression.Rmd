@@ -29,10 +29,12 @@ knitr::opts_chunk$set(echo = TRUE)
 # Spotifyr documentation
 https://www.rdocumentation.org/packages/spotifyr/versions/2.2.4
 
+# Load Libraries
 ```{r}
 library(tidyverse)
 library(spotifyr)
 library(rstanarm)
+library(loo)
 library(tidybayes)
 library(broom)
 library(broom.mixed)
@@ -71,7 +73,6 @@ artist_id
 ```{r}
 search_string <- "Radiohead"
 
-# Uses search_spotify() for precise selection of artist id
 radiohead_audio_dt <- 
     get_artist_audio_features(
     artist = artist_id,
@@ -84,10 +85,7 @@ radiohead_audio_dt <-
 
 radiohead_audio_dt %>% glimpse()
 
-# Combine with track popularity using track_id
-
 ```
-
 # Get track popularity scores
 ```{r}
 
@@ -127,7 +125,6 @@ popularity_score_df <-
 
 popularity_score_df
 
-
 ```
 
 # Combine the two data frames
@@ -148,7 +145,7 @@ songs <-
     group_by(track_name) %>%
     slice_max(popularity, n = 1) %>%
     ungroup() %>%
-    # distinct(track_name, .keep_all = TRUE) %>%  # Keep only the first occurrence of each track_name
+    # distinct(track_name, .keep_all = TRUE) %>%  # Keep only the first occurrence
     mutate(
       album_release_date = parse_date_time(album_release_date, c("ymd", "Y")),
       song_age = as.numeric(Sys.Date() - as.Date(album_release_date)))
@@ -188,7 +185,6 @@ write_csv(songs, "data/radiohead_songs.csv")
 ## Import data
 ```{r}
 songs <- read_csv("data/radiohead_songs.csv")
-
 songs %>% glimpse()
 
 ```
@@ -202,19 +198,22 @@ summary(lm_model)
 
 broom::tidy(lm_model)
 
+confint(lm_model, level = 0.95)
+
 ```
 # Bayesian linear regression
 - Assumes parameters are random and data is fixed
 - Interested in range of parameters that could give rise to given data set
 ```{r}
-stan_model <- stan_glm(popularity ~ song_age
-                       ,data = songs
-                       # ,chains = 4
-                       # ,iter = 2000
-                       # ,warmup = 1000
-                       )
+library(tidyverse)
+library(rstanarm)
+library(broom.mixed)
 
-summary(stan_model)
+songs <- read_csv("data/radiohead_songs.csv")
+# songs %>% glimpse()
+
+stan_model <- stan_glm(popularity ~ song_age
+                       ,data = songs, )
 
 broom.mixed::tidy(stan_model)
 
@@ -224,9 +223,8 @@ broom.mixed::tidy(stan_model)
 - Confidence interval: probability that a range contains the true value
 - Credible interval: probability that the true value is within a range
 ```{r}
-confint(lm_model, level = 0.95)
 
-posterior_interval(stan_model, level = 0.95)
+posterior_interval(stan_model, prob = 0.77)
 
 ```
 # Probability that parameters are within a range
@@ -262,32 +260,245 @@ summary(model_2chains)
 
 ```
 
-```{python}
-import pystan
-import pandas as pd
-import arviz as az
+# Addressing errors when fitting
+## Divergent transitions
+eg: 1: There were 15 divergent transitions after warmup. 
+Increasing adapt_delta above 0.8 may help. Default = 0.95
+```{r}
+# Estimate the model with a new `adapt_delta`
+adapt_model <- stan_glm(popularity ~ song_age, data = songs,
+  control = list(adapt_delta = 0.99))
+
+# View summary
+summary(adapt_model)
 ```
 
-```{python}
-import pystan
+## Exceeding Maximum Tree Depth
+eg: 2: Chain 1 reached the maximum tree depth
+Max tree depth indicates poor efficiency
+```{r}
+# Estimate the model with a new `max_treedepth`
+tree_model <- stan_glm(popularity ~ song_age, data = songs,
+  control = list(max_treedepth = 15))
 
-import distutils
-print(distutils.__file__)
+# View summary
+summary(tree_model)
+```
 
-model_code = 'parameters {real y;} model {y ~ normal(0,1);}'
-model = pystan.StanModel(model_code=model_code)
-y = model.sampling().extract()['y']
-y.mean() 
+# Assessing model fit for frequentist model
+```{r}
+# Print the R-squared from the linear model
+lm_summary <- summary(lm_model)
+lm_summary$r.squared
+
+# Calulate sums of squares
+ss_res <- var(residuals(lm_model))
+ss_fit <- var(fitted(lm_model))
+
+# Calculate the R-squared
+1 - (ss_res / (ss_res + ss_fit))
+```
+# R-squared for Bayesian Model
+How much variance in the predicted variable can be explained by the predictors
+```{r}
+# Save the variance of residuals
+ss_res <- var(residuals(stan_model))
+
+# Save the variance of fitted values
+ss_fit <- var(fitted(stan_model))
+
+# Calculate the R-squared
+1 - (ss_res / (ss_res + ss_fit))
+
+stan_model$ses
+stan_model$fitted.values[1:10]
+```
+# Posterior predictive model checks
+- Compare the distribution of predictions in an iteration to actual distributions
+```{r}
+# Calculate posterior predictive scores
+predictions <- posterior_linpred(stan_model)
+
+summary(songs$popularity)
+
+summary(predictions[1,])
+
+summary(predictions[10,])
+
+```
+
+# Compare individual scores to their expected distribution
+```{r}
+
+songs$popularity[12]
+
+summary(predictions[,12])
+
+```
+```{r}
+# Calculate the posterior distribution of the R-squared
+r2_posterior <- bayes_R2(stan_model)
+
+# Make a histogram of the distribution
+hist(r2_posterior)
+```
+```{r}
+# Create density comparison
+pp_check(stan_model, "dens_overlay")
+
+# Create scatter plot of means and standard deviations
+pp_check(stan_model, "stat")
+```
+# Comparing models
+```{r}
+model_1pred <- stan_glm(popularity ~ song_age, data = songs)
+
+model_2pred <- stan_glm(popularity ~ song_age + tempo, data = songs)
+
+model_3pred <- stan_glm(popularity ~ song_age + duration_ms, data = songs)
+
+model_4pred <- stan_glm(popularity ~ song_age + time_signature, data = songs)
+
+
+```  
+```{r}
+loo_1pred <- loo(model_1pred)
+
+loo_2pred <- loo(model_2pred)
+
+loo_3pred <- loo(model_3pred)
+
+loo_4pred <- loo(model_4pred)
+
+loo_compare(loo_1pred, loo_2pred, loo_3pred, loo_4pred)
+
+# Expected log pointwise predictive density is more negative for worse fitting
+# models
+
+# The preferred model is model_1pred
+```
+
+# Make predictions
+```{r}
+stan_model <- stan_glm(popularity ~ song_age + artist_name, data = songs)
+
+summary(stan_model)
+
+# Get posteriors of predicted scores for each observation
+posteriors <- posterior_predict(stan_model)
+
+posteriors[1:10, 1:5]
+```
+
+```{r}
+predict_data <- data.frame(song_age = c(500, 9000))
+
+new_predictions <- posterior_predict(stan_model, newdata = predict_data)
+
+new_predictions[1:10,]
+
+summary(new_predictions[, 1])
+```
+# Visualise predictions
+```{r}
+new_predictions[1:10, ]
+
+new_predictions <- as.data.frame(new_predictions)
+colnames(new_predictions) <- c("500 days", "9000 days")
+
+plot_posterior <- pivot_longer(new_predictions, cols = everything(),
+                               names_to = "song_age", 
+                               values_to = "predict")
+
+ggplot(plot_posterior, aes(x = predict)) +
+    facet_wrap(~song_age, ncol = 1) +
+	geom_density() +
+    labs(
+        title = "Predicted song popularity distributions as a function of song age",
+        x = "Song popularity on Spotify",
+        y = "Density"
+    ) +
+    theme_minimal()
+
+```
+
+
+# Plot best model fit
+```{r}
+# Save the model parameters
+tidy_coef <- tidy(stan_model)
+
+# Extract intercept and slope
+model_intercept <- tidy_coef$estimate[1]
+model_slope <- tidy_coef$estimate[2]
+
+# Create the plot
+ggplot(songs, aes(x = song_age, y = popularity)) +
+  geom_point() +
+  geom_abline(intercept = model_intercept, slope = model_slope)
+
+draws <- tidybayes::spread_draws(stan_model, `(Intercept)`, song_age) 
+draws
+
+ggplot(songs, aes(x = song_age, y = popularity)) +
+	geom_point(size = 2, alpha = 0.5) +
+	geom_abline(data = draws, aes(intercept = `(Intercept)`, slope = song_age),
+                size = 0.1, alpha = 0.05, color = "skyblue") +
+	geom_abline(intercept = model_intercept, slope = model_slope) +
+    labs(title = "Radiohead Song Popularity on Spotify",
+         subtitle = "People like the old stuff better than the new",
+         caption = "Bayesian linear regression model with uncertainty",
+         x = "Song Age",
+         y = "Popularity") +
+    theme_minimal()
+
+```
+
+## loo_compare example
+```{r}
+?loo_compare()
+
+LL <- example_loglik_array()
+loo1 <- loo(LL, r_eff = NA)     # should be worst model when compared
+loo2 <- loo(LL + 1, r_eff = NA) # should be second best model when compared
+loo3 <- loo(LL + 2, r_eff = NA) # should be best model when compared
+
+comp <- loo_compare(loo1, loo2, loo3)
+print(comp, digits = 2)
+```
+
+
+# Predictions using stan model
+```{r}
+
+range(songs$song_age)
+
+library(tidybayes)
+library(dplyr)
+library(ggdist)
+
+# Define the new data frame with predictor variables for new observations
+new_data <- data.frame(song_age = c(400, 1000, 4000, 8000, 10000, 20000))
+
+# Generate predicted values for the response variable (popularity)
+pred <- predict(stan_model, newdata = new_data, draws = 100)
+
+# Calculate the mean and 95% credible interval for the predicted values
+summary_df <- as_tibble(pred) %>% 
+  summarise_all(~mean_qi(.x, probs = c(0.025, 0.975))) %>% 
+  unnest(cols = c(value))
+summary_df
+
+# Combine the new data and predicted values into a single data frame
+plot_data <- bind_cols(new_data, as_tibble(pred))
+
 ```
 
 
 ```{python}
 # Microsoft Visual C++ 14.0 or greater is required. Get it with "Microsoft C++ Build Tools": https://visualstudio.microsoft.com/visual-cpp-build-tools/
 
-# C:\Users\mattr\mambaforge\envs\stan_env\Lib\distutils\distutils.cfg
-
-import distutils
-print(distutils.__file__)
+# Needed to transfer to WSL Linux version to run successfully on Windows
 
 songs = r.songs
 
