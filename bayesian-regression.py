@@ -157,8 +157,8 @@ fig.subplots_adjust(hspace=0.4)
 colours = ["#8B008B", "#BDB76B"]
 
 # Add mean labels
-mean_9000 = np.mean(summary_9000)
-mean_500 = np.mean(summary_500)
+mean_9000 = summary_9000[2]
+mean_500 = summary_500[2]
 
 # Plot density for 500 days
 sns.kdeplot(
