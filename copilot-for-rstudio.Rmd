@@ -1,0 +1,30 @@
+---
+title: "copilot-for-rstudio"
+author: "Matt Rosinski"
+date: "2023-04-08"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+if (!require(remotes))
+    install.packages("remotes")
+remotes::install_github("irudnyts/openai")
+```
+
+```{r}
+Sys.setenv(
+    OPENAI_API_KEY = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
+)
+```
+
+```{r}
+if (!require(usethis))
+    install.packages("usethis")
+
+usethis::edit_r_environ(scope = "project")
+```
+
