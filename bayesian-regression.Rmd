@@ -224,7 +224,7 @@ broom.mixed::tidy(stan_model)
 - Credible interval: probability that the true value is within a range
 ```{r}
 
-posterior_interval(stan_model, prob = 0.77)
+posterior_interval(stan_model, prob = 0.89)
 
 ```
 # Probability that parameters are within a range
@@ -378,31 +378,46 @@ loo_compare(loo_1pred, loo_2pred, loo_3pred, loo_4pred)
 # The preferred model is model_1pred
 ```
 
-# Make predictions
+# Make predictions with a Bayesian Linear Regression Model
 ```{r}
-stan_model <- stan_glm(popularity ~ song_age + artist_name, data = songs)
+library(tidyverse)
+library(rstanarm)
+library(broom.mixed)
 
-summary(stan_model)
+songs <- read_csv("data/radiohead_songs.csv")
+set.seed(2023)
+
+# Specified with the same priors as PyStan model - takes longer to run with similar result
+# stan_model <- stan_glm(popularity ~ song_age, data = songs, 
+#                        prior = normal(0, 100, autoscale = FALSE), 
+#                        prior_intercept = normal(0, 100, autoscale = FALSE), 
+#                        prior_aux = cauchy(0, 5, autoscale = FALSE))
+
+stan_model <- stan_glm(popularity ~ song_age, data = songs)
+
+
+# summary(stan_model)
+broom.mixed::tidy(stan_model)
 
 # Get posteriors of predicted scores for each observation
 posteriors <- posterior_predict(stan_model)
 
-posteriors[1:10, 1:5]
 ```
-
+# Predict song popularity
 ```{r}
 predict_data <- data.frame(song_age = c(500, 9000))
 
 new_predictions <- posterior_predict(stan_model, newdata = predict_data)
 
-new_predictions[1:10,]
-
+# Predictions for popularity with song age of 500 days
 summary(new_predictions[, 1])
+
+# Predictions for popularity with song age of 9000 days
+summary(new_predictions[, 2])
+
 ```
 # Visualise predictions
 ```{r}
-new_predictions[1:10, ]
-
 new_predictions <- as.data.frame(new_predictions)
 colnames(new_predictions) <- c("500 days", "9000 days")
 
@@ -410,15 +425,35 @@ plot_posterior <- pivot_longer(new_predictions, cols = everything(),
                                names_to = "song_age", 
                                values_to = "predict")
 
-ggplot(plot_posterior, aes(x = predict)) +
+means <- plot_posterior %>%
+  group_by(song_age) %>%
+  summarise(mean_popularity = mean(predict))
+
+colours <- c("#8B008B", "#BDB76B")
+
+ggplot(plot_posterior, aes(x = predict, fill = song_age)) +
     facet_wrap(~song_age, ncol = 1) +
-	geom_density() +
+	geom_density(alpha = 0.8) +
+    scale_fill_manual(values = colours) +
+    geom_vline(data = means, 
+               aes(xintercept = mean_popularity), 
+               linetype = "dotted", 
+               color = "black") +
+    geom_text(data = means, 
+              aes(x = mean_popularity, 
+                  y = 0, 
+                  label = round(mean_popularity, 1)), 
+              vjust = -1, 
+              size = 4, 
+              color = "white") +
     labs(
-        title = "Predicted song popularity distributions as a function of song age",
+        title = "Predicted Radiohead song popularity distributions as a function of song age",
         x = "Song popularity on Spotify",
-        y = "Density"
+        y = "Density",
+        fill = "Song Age"
     ) +
-    theme_minimal()
+    theme_minimal() +
+    theme(legend.position = "None")
 
 ```
 
